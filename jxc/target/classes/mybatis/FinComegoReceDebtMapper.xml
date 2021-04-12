@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.fin.FinComegoReceDebtMapper">
+
+    <select id="listDataGroupByComegoPage" resultType="java.util.Map">
+        select c.id, c.`code`, c.`name`, c.contacter, c.phone, c.origin_debt as amount_origin_debt,
+        sum(ifnull(d.amount,0)) as amount_debt,
+        sum(ifnull(b.amount_discount,0)) as amount_discount,
+        sum(ifnull(b.amount_paid,0)) as amount_rece
+        from bsd_customer c
+        left join
+        (
+        select d.comego_id, d.amount from log_debt d
+        left join t_bill b on b.id = d.bill_id and b.is_cancle = '0'
+        left join fin_bill fb on fb.id = d.bill_id and fb.is_cancle = '0'
+        where d.cat = '1'
+        ) d on d.comego_id = c.id
+        left join fin_bill b on b.comego_id = c.id and b.bill_cat = 'fin_comego_in'
+        <where>
+            1 = 1
+            <if test="record.isCanViewOtherUserCustomer == '0'.toString()">
+                and (
+                c.employee_id = #{record.employeeId}
+                or c.employee_id is null
+                )
+            </if>
+            <if test="record.cat != null and record.cat != ''">
+                and c.cat_id LIKE concat(#{record.cat,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                c.code LIKE concat('%', #{record.keywords,jdbcType=VARCHAR},'%')
+                or c.name LIKE concat('%', #{record.keywords,jdbcType=VARCHAR},'%')
+                or c.contacter LIKE concat('%', #{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY c.id
+    </select>
+
+    <select id="listDebtDetailByComegoId" resultType="java.util.Map">
+        select * from (
+        select b.id, b.bill_no, b.business_time, d.create_time,
+        b.bill_cat, b.bill_cat_name,
+        e.real_name as hand_user_name,
+        d.is_cancle_bill,
+        --原单欠款， 回收欠款， 优惠金额
+        d.amount as amount_debt, null as amount_rece, null as amount_discount,
+        --结余欠款，应收欠款
+        d.remain_amount as remain_debt, d.amount as amount_receivable,
+        a.`name` as account_name,
+        b.remarks
+        from log_debt d
+        inner join t_bill b on b.id = d.bill_id
+        left join sys_employee e on e.id = b.hand_user_id
+        left join bsd_account a on a.id = b.account_id
+        <where>
+            d.cat = '1' and d.comego_id = #{record.comegoId}
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.bill_no LIKE concat('%', #{record.keywords},'%')
+                or b.remarks LIKE concat('%', #{record.keywords},'%')
+                )
+            </if>
+        </where>
+        UNION ALL
+        -- 回收欠款
+        select b.id, b.bill_no, b.business_time, d.create_time,
+        b.bill_cat, b.bill_cat_name,
+        e.real_name as hand_user_name,
+        d.is_cancle_bill,
+        null as amount_debt, -d.amount as amount_rece, b.amount_discount,
+        d.remain_amount, d.amount as amount_receivable,
+        a.`name` as account_name,
+        b.remarks
+        from fin_bill b
+        inner join log_debt d on d.bill_id = b.id
+        left join sys_employee e on e.id = b.hand_user_id
+        left join bsd_account a on a.id = b.account_id
+        <where>
+            1=1 and b.comego_id = #{record.comegoId}
+            and b.bill_cat = 'fin_comego_in'
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.bill_no LIKE concat('%', #{record.keywords,jdbcType=VARCHAR},'%')
+                or b.remarks LIKE concat('%', #{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        UNION ALL
+        -- 日常收入
+        select b.id, b.bill_no, b.business_time, d.create_time,
+        b.bill_cat, b.bill_cat_name,
+        e.real_name as hand_user_name,
+        d.is_cancle_bill,
+        --原单欠款， 回收欠款， 优惠金额
+        d.amount as amount_debt, null as amount_rece, null as amount_discount,
+        --结余欠款，应收欠款
+        d.remain_amount as remain_debt, d.amount as amount_receivable,
+        a.`name` as account_name,
+        b.remarks
+        from fin_bill b
+        inner join log_debt d on d.bill_id = b.id
+        left join sys_employee e on e.id = b.hand_user_id
+        left join bsd_account a on a.id = b.account_id
+        <where>
+            1=1 and b.comego_id = #{record.comegoId}
+            and ( b.bill_cat = 'fin_dayily_in' or b.bill_cat = 'fin_dayily_out')
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.bill_no LIKE concat('%', #{record.keywords,jdbcType=VARCHAR},'%')
+                or b.remarks LIKE concat('%', #{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        UNION ALL
+        select null as id, null as bill_no,
+        s.create_time as business_time, s.create_time,
+        '0' as bill_cat, "期初" as bill_cat_name,
+        e.real_name as hand_user_name,
+        null as is_cancle_bill,
+        s.origin_debt as amount_debt, null as amount_rece, null as amount_discount,
+        s.origin_debt as remain_amount, s.origin_debt as amount_receivable,
+        null as account_name,
+        null as remarks
+        from bsd_customer s
+        left join sys_employee e on e.id = s.create_user
+        where s.id = #{record.comegoId}
+        ) a order by a.business_time desc , a.create_time desc
+    </select>
+
+    <select id="selectStatistics" resultType="java.util.Map">
+        select
+        sum(ifnull(b.amount_paid,0)) as amount_rece,
+        sum(ifnull(b.amount_discount,0)) as amount_discount,
+        (
+          select sum(origin_debt) from bsd_customer
+        ) as amount_origin,
+        (
+        select sum(ifnull(d.amount,0))
+        from log_debt d
+        left join t_bill b on b.id = d.bill_id
+        <where>
+            b.is_cancle = '0' and d.cat = '1'
+        </where>
+        ) as amount_debt
+        from fin_bill b
+        <where>
+            b.bill_cat = 'fin_comego_in' and b.is_cancle = '0'
+        </where>
+    </select>
+</mapper>

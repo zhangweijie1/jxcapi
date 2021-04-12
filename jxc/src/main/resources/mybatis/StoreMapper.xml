@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bsd.StoreMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.bsd.Store">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="address" jdbcType="VARCHAR" property="address"/>
+        <result column="contacter" jdbcType="VARCHAR" property="contacter"/>
+        <result column="phone" jdbcType="VARCHAR" property="phone"/>
+        <result column="email" jdbcType="VARCHAR" property="email"/>
+        <result column="postal_code" jdbcType="VARCHAR" property="postalCode"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="create_time" jdbcType="VARCHAR" property="createTime"/>
+        <result column="update_time" jdbcType="VARCHAR" property="updateTime"/>
+        <result column="is_lock" jdbcType="VARCHAR" property="isLock"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, code, `name`, address, contacter,
+        phone, email, postal_code, status, create_time,
+        update_time, is_lock
+    </sql>
+
+    <sql id="Search_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, code, name, address, contacter,
+        phone, email, postal_code, status, remark, create_time,
+        update_time, is_lock
+    </sql>
+
+    <select id="listPage" resultType="com.mrguo.vo.basedata.StoreVo">
+        SELECT
+        store.id, store.`code`, store.`name`, store.`address`, store.contacter, store.phone, store.email,
+        store.postal_code, store.status, store.create_time, store.update_time
+        FROM bsd_store store
+        <where>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                store.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or store.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or store.`contacter` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or store.`phone` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="listAllData" resultType="com.mrguo.vo.basedata.StoreVo">
+        select s.* from bsd_store s
+    </select>
+
+    <select id="selectById" resultType="com.mrguo.vo.basedata.StoreVo">
+        SELECT
+        <include refid="Search_Column_List"/>
+        FROM bsd_store store
+        where store.id = #{storeId,jdbcType=BIGINT}
+    </select>
+
+    <select id="listStockDataGroupByStore" resultType="java.util.Map">
+        select
+        st.id, st.name,
+        ifnull(sum(gs.origin_quantity + gs.quantity_in + gs.quantity_out),0) as quantity
+        from bsd_store st
+        left join bsd_goods_stock gs on gs.store_id = st.id
+        GROUP BY st.id
+        ORDER BY quantity desc
+    </select>
+
+    <delete id="deleteByIds">
+        delete from bsd_store
+        <if test="list.size() > 0">
+            <where>
+                id in
+                <foreach collection="list" item="storeId" open="(" close=")" separator=",">
+                    #{storeId}
+                </foreach>
+            </where>
+        </if>
+    </delete>
+</mapper>

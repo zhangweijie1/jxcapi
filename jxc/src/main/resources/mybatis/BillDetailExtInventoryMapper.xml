@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bill.BillDetailExtInventoryMapper">
+  <resultMap id="BaseResultMap" type="com.mrguo.entity.bill.BillDetailExtInventory">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="book_qty" jdbcType="DECIMAL" property="bookQty" />
+    <result column="real_qty" jdbcType="DECIMAL" property="realQty" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    id, book_qty, real_qty
+  </sql>
+</mapper>

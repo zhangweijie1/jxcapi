@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bill.BillMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.bill.Bill">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="bill_no" jdbcType="VARCHAR" property="billNo"/>
+        <result column="amount_payable" jdbcType="DECIMAL" property="amountPayable"/>
+        <result column="amount_paid" jdbcType="DECIMAL" property="amountPaid"/>
+        <result column="create_user_id" jdbcType="BIGINT" property="createUserId"/>
+        <result column="update_user_id" jdbcType="BIGINT" property="updateUserId"/>
+        <result column="remarks" jdbcType="VARCHAR" property="remarks"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, bill_no, amount_payable, amount_paid, create_user_id, update_user_id,
+        remarks, create_time, update_time
+    </sql>
+
+    <select id="listCustom" resultType="com.mrguo.entity.bill.Bill">
+        SELECT b.*,
+        ifnull(sum(d.quantity),0) as goods_quantity,
+        ifnull(sum(d.change_quantity),0) as change_quantity,
+        ifnull(sum(d.change_quantity2),0) as change_quantity2,
+        ifnull(sum(d.return_quantity),0) as return_quantity,
+        store.name as store_name,
+        e.real_name as audit_user_name
+        from t_bill as b
+        <if test="record.saleType == '0'.toString() or record.saleType == '1'.toString()">
+            LEFT JOIN t_bill_ext_sale ets on ets.bill_id = b.id
+        </if>
+        LEFT JOIN bsd_store store on b.store_id = store.id
+        LEFT JOIN sys_employee e on e.id = b.audit_user_id
+        LEFT JOIN t_bill_detail d on d.bill_id = b.id
+        <where>
+            and b.bill_cat = #{record.billCat,jdbcType=VARCHAR}
+            <if test="record.isCancle == '0'.toString()">
+                and b.is_cancle = #{record.isCancle}
+            </if>
+            <if test="record.isClose == '0'.toString()">
+                and b.is_close = #{record.isClose}
+            </if>
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.saleType == '0'.toString() or record.saleType == '1'.toString()">
+                and ets.type = #{record.saleType}
+            </if>
+            <if test="record.billNo != null and record.billNo != ''">
+                and b.bill_no LIKE concat('%',#{record.billNo,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.goodsNamestr != null and record.goodsNamestr != ''">
+                and b.goods_namestr LIKE concat('%',#{record.goodsNamestr,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.comegoName != null and record.comegoName != ''">
+                and b.comego_name LIKE concat('%',#{record.comegoName,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.cBeginTime != null and record.cBeginTime != '' and record.cEndTime != null and record.cEndTime != ''">
+                and b.create_time between #{record.cBeginTime} and #{record.cEndTime}
+            </if>
+            <if test="record.bBeginTime != null and record.bBeginTime != '' and record.bEndTime != null and record.bEndTime != ''">
+                and b.business_time between #{record.bBeginTime} and #{record.bEndTime}
+            </if>
+            <if test="record.handUserId != null and record.handUserId != ''">
+                and b.hand_user_id = #{record.handUserId,jdbcType=BIGINT}
+            </if>
+            <if test="record.createUserId != null and record.createUserId != ''">
+                and b.create_user_id = #{record.createUserId,jdbcType=BIGINT}
+            </if>
+            <if test="record.auditStatus != null and record.auditStatus != '' and record.auditStatus != '-1'.toString()">
+                and b.audit_status = #{record.auditStatus,jdbcType=VARCHAR}
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.`bill_no` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.`goods_namestr` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.`remarks` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        group by b.id
+        having 1=1
+        <if test="record.stockStatus == '0'.toString()">
+            and change_quantity = 0
+        </if>
+        <if test="record.stockStatus == '1'.toString()">
+            and change_quantity > 0
+        </if>
+        <if test="record.stockStatus == '2'.toString()">
+            and change_quantity = goods_quantity
+        </if>
+        order by b.create_time desc
+    </select>
+
+    <select id="getDataById" resultType="com.mrguo.entity.bill.Bill">
+        SELECT b.*,
+        sum(d.quantity) as goods_quantity,
+        sum(d.change_quantity) as change_quantity,
+        sum(d.change_quantity2) as change_quantity2,
+        sum(d.return_quantity) as return_quantity,
+        a.name as account_name,
+        e.real_name as hand_user_name,
+        ec.real_name as create_user_name,
+        store.name as store_name
+        from t_bill as b
+        left join t_bill_detail d on d.bill_id = b.id
+        LEFT JOIN bsd_account a on b.account_id = a.id
+        LEFT JOIN sys_employee e on b.hand_user_id = e.id
+        LEFT JOIN sys_employee ec on b.create_user_id = ec.id
+        LEFT JOIN bsd_store store on b.store_id = store.id
+        where b.id = #{billId}
+    </select>
+
+    <select id="listWaiteReturnBills" resultType="com.mrguo.entity.bill.Bill">
+        select * from (
+            select b.*,
+            sum(IFNULL(d.quantity,0)) as quantity,
+            sum(IFNULL(d.change_quantity,0)) as change_quantity,
+            sum(IFNULL(d.return_quantity,0)) as return_quantity
+            from t_bill b
+            left join t_bill_detail d on d.bill_id = b.id
+            where b.bill_cat = #{billCat} and b.is_cancle = '0'
+            GROUP BY b.id
+        ) a where quantity > (change_quantity + return_quantity)
+    </select>
+
+    <select id="countRelationBillByBillId" resultType="java.lang.Integer">
+        select count(1) from t_bill
+        where bill_relation_id = #{billId} and is_cancle = '0'
+    </select>
+
+    <select id="countRelationsByBillIdAndBillCat" resultType="java.lang.Integer">
+        select count(1)
+        from t_bill
+        where bill_relation_id = #{billId}
+        and bill_cat = #{billCat}
+        and is_cancle = '0'
+    </select>
+
+    <select id="countByAccountId" resultType="java.lang.Integer">
+        select count(1) from t_bill
+        where account_id = #{accountId}
+    </select>
+
+    <select id="countByComegoId" resultType="java.lang.Integer">
+        select count(1) from t_bill
+        where comego_id = #{comegoId}
+    </select>
+
+    <select id="countByStoreIds" resultType="java.lang.Integer">
+        select count(1) from t_bill
+        <if test="list.size() > 0">
+            <where>
+                store_id in
+                <foreach collection="list" item="storeId" open="(" close=")" separator=",">
+                    #{storeId}
+                </foreach>
+            </where>
+        </if>
+    </select>
+</mapper>

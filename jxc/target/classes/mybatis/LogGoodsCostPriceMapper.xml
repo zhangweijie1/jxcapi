@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.goods.LogGoodsCostPriceMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.log.LogGoodsCostPrice">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="sku_id" jdbcType="BIGINT" property="skuId"/>
+        <id column="bill_id" jdbcType="BIGINT" property="billId"/>
+        <result column="remain_price_cost" jdbcType="DECIMAL" property="remainPriceCost"/>
+        <result column="cat" jdbcType="VARCHAR" property="cat"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        sku_id, bill_id, remain_price_cost, cat
+    </sql>
+
+    <select id="listDataBySkuId" resultType="com.mrguo.entity.log.LogGoodsCostPrice">
+        select * from (
+            select
+            b.bill_cat, lgc.bill_cat_name, b.bill_no,
+            b.business_time,
+            b.direction,
+            lgc.quantity, lgc.price_cost, lgc.remain_price_cost,
+            lgc.remain_qty
+            from t_bill b
+            inner join log_goods_costprice lgc on lgc.bill_id = b.id and lgc.sku_id = #{record.skuId}
+            where b.is_cancle = '0'
+            UNION ALL
+            select
+            '0' as bill_cat, '期初' as bill_cat_name, '' as bill_no,
+            (select create_time from bsd_goods_sku where id = #{record.skuId}) as business_time,
+            '1' as direction,
+            st.origin_quantity as quantity, price_cost, price_cost as remain_price_cost,
+            st.origin_quantity as remain_stock_qty
+            from bsd_goods_costprice_origin cp
+            left join bsd_goods_stock st on st.sku_id = cp.sku_id and st.store_id = cp.store_id and st.sku_id = #{record.skuId}
+            where cp.sku_id = #{record.skuId}
+        ) a order by a.business_time desc
+    </select>
+
+    <select id="getLastDataByBusinessTime" resultType="com.mrguo.entity.log.LogGoodsCostPrice">
+        select
+        s.* from log_goods_costprice s
+        right join (
+        select sku_id, max(s.business_time) as business_time from log_goods_stock s
+        inner join t_bill b on b.id = s.bill_id
+        where s.business_time <![CDATA[<]]> #{date} and b.is_cancle = '0'
+        GROUP BY s.sku_id
+        ) sb on sb.sku_id = s.sku_id and sb.business_time = s.business_time
+    </select>
+
+    <select id="getDataAfterBusinessTimeBySkuIds" resultType="com.mrguo.entity.log.LogGoodsCostPrice">
+        select * from log_goods_costprice s
+        <where>
+            1=1
+            and s.business_time <![CDATA[<]]> #{date}
+            <if test="list.size() > 0">
+                and s.sku_id in
+                <foreach collection="list" item="skuId" open="(" close=")" separator=",">
+                    #{skuId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+</mapper>

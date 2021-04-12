@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bill.BillDetailMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.bill.BillDetail">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="bill_id" jdbcType="BIGINT" property="billId"/>
+        <result column="sku_id" jdbcType="BIGINT" property="skuId"/>
+        <result column="bill_relation_id" jdbcType="BIGINT" property="billRelationId"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="unit_id" jdbcType="BIGINT" property="unitId"/>
+        <result column="unit_multi" jdbcType="DECIMAL" property="unitMulti"/>
+        <result column="quantity" jdbcType="DECIMAL" property="quantity"/>
+        <result column="change_quantity" jdbcType="DECIMAL" property="changeQuantity"/>
+        <result column="change_quantity2" jdbcType="DECIMAL" property="changeQuantity2"/>
+        <result column="return_quantity" jdbcType="DECIMAL" property="returnQuantity"/>
+        <result column="direction" jdbcType="VARCHAR" property="direction"/>
+        <result column="price" jdbcType="DECIMAL" property="price"/>
+        <result column="price_cost" jdbcType="DECIMAL" property="priceCost"/>
+        <result column="total" jdbcType="DECIMAL" property="total"/>
+        <result column="options" jdbcType="VARCHAR" property="options"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, bill_id, sku_id, bill_relation_id, code, name, unit_id, unit_multi, quantity, change_quantity,
+        change_quantity2, return_quantity, direction, price, price_cost, total, options
+    </sql>
+
+    <select id="countByUnitIds" resultType="java.lang.Integer">
+        select count(1) from t_bill_detail
+        <where>
+            unit_id in
+            <foreach collection="list" item="unitId" index="index" open="(" close=")" separator=",">
+                #{unitId}
+            </foreach>
+        </where>
+    </select>
+
+    <select id="selectUnitsBySkuIdUnitIds" resultType="java.lang.Long">
+        select distinct unit_id from t_bill_detail
+        <where>
+            and sku_id = #{skuId}
+            <if test="list.size() != 0">
+                and unit_id in
+                <foreach collection="list" item="unitId" index="index" open="(" close=")" separator=",">
+                    #{unitId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="selectMoreListDataByBillId" resultType="com.mrguo.entity.bill.BillDetail">
+        select
+        d.*,
+        u.unit_id_str, u.unit_name_str, u.unit_multi_str, unit_is_base_str from (
+        select d.*, u.`name` as unit_name, p.price as price_str,
+        sku.specs, sku.is_enable_specs
+        from t_bill_detail d
+        left join bsd_goods_sku sku on sku.id = d.sku_id
+        left join bsd_unit u on u.id = d.unit_id
+        left join bsd_goods_price p on p.sku_id = d.sku_id and p.unit_id = d.unit_id
+        where d.bill_id = #{billId}
+        ) d left join (
+        select DISTINCT d.sku_id,
+        GROUP_CONCAT(gu.unit_id) as unit_id_str,
+        GROUP_CONCAT(u.`name`) as unit_name_str,
+        GROUP_CONCAT(gu.`is_base`) as unit_is_base_str,
+        GROUP_CONCAT(gu.`multi`) as unit_multi_str
+        from t_bill_detail d
+        left join bsd_goods_unit gu on gu.sku_id = d.sku_id
+        left join bsd_unit u on u.id = gu.unit_id
+        where d.bill_id = #{billId}
+        GROUP BY d.sku_id
+        ) u on u.sku_id = d.sku_id
+    </select>
+
+    <select id="listNotTransDetailByBillId" resultType="com.mrguo.entity.bill.BillDetail">
+        select d.*,
+        u.name as unit_name,
+        IFNULL(change_quantity,0) as change_quantity
+        from t_bill_detail d
+        left join bsd_unit u on u.id = d.unit_id
+        where bill_id = #{billId} and quantity > change_quantity
+    </select>
+
+    <select id="listHasTransDetailByBillId" resultType="com.mrguo.entity.bill.BillDetail">
+        select d.*,
+        b.bill_no,
+        u.name as unit_name
+        FROM t_bill_detail d
+        left join t_bill b on b.id = d.bill_id
+        left join bsd_unit u on u.id = d.unit_id
+        WHERE b.bill_relation_id = #{billId} and b.is_cancle = '0'
+    </select>
+</mapper>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.goods.GoodsCostPriceOriginMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.goods.GoodsCostPriceOrigin">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="sku_id" jdbcType="BIGINT" property="skuId"/>
+        <id column="store_id" jdbcType="DECIMAL" property="storeId"/>
+        <result column="price_cost" jdbcType="DECIMAL" property="priceCost"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        sku_id, store_id, price_cost
+    </sql>
+
+    <select id="listCostPriceOriginByStoreId" resultType="com.mrguo.entity.goods.GoodsCostPriceOrigin">
+      select * from bsd_goods_costprice_origin
+      where store_id = #{storeId}
+    </select>
+</mapper>

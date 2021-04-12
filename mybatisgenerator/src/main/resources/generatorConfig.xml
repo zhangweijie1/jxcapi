@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+  PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+  "http://www.mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+<generatorConfiguration>
+  <context id="MysqlTables" targetRuntime="MyBatis3" defaultModelType="flat">
+
+      <plugin type="tk.mybatis.mapper.generator.MapperPlugin">
+          <property name="mappers" value="tk.mybatis.mapper.common.Mapper"/>
+      </plugin>
+
+      <jdbcConnection driverClass="com.mysql.jdbc.Driver"
+                      connectionURL="jdbc:mysql://127.0.0.1:3306/cx_jxc"
+                      userId="root"
+                      password="123456">
+      </jdbcConnection>
+    <!--<javaTypeResolver >-->
+      <!--<property name="forceBigDecimals" value="false" />-->
+    <!--</javaTypeResolver>-->
+    <!--Model生成-->
+    <javaModelGenerator targetPackage="com.mrguo.entity"  targetProject="/Users/apple/Documents/">
+      <property name="enableSubPackages" value="true" />
+      <property name="trimStrings" value="true" />
+    </javaModelGenerator>
+    <!--xml生成-->
+    <sqlMapGenerator targetPackage="mybatis"  targetProject="/Users/apple/Documents/" >
+      <property name="enableSubPackages" value="true"  />
+    </sqlMapGenerator>
+    <!--dao生成-->
+    <javaClientGenerator type="XMLMAPPER" targetPackage="com.mrguo.dao" targetProject="/Users/apple/Documents/" >
+      <property name="enableSubPackages" value="true" />
+    </javaClientGenerator>
+	<!-- 要生成哪些表-->
+      <!--<table schema="" tableName="t_%"-->
+             <!--enableCountByExample="false"-->
+             <!--enableDeleteByExample="false"-->
+             <!--enableSelectByExample="false"-->
+             <!--enableUpdateByExample="false">-->
+          <!--&lt;!&ndash; 自动生成的属性名和数据库列名一样 true：是 ： false:否 &ndash;&gt;-->
+          <!--<property name="useActualColumnNames" value="false"/>-->
+          <!--&lt;!&ndash; 生成的SQL中的表名将不会包含schema和catalog前缀 &ndash;&gt;-->
+          <!--<property name="ignoreQualifiersAtRuntime" value="true"/>-->
+          <!--<domainObjectRenamingRule searchString="^T" replaceString="" />-->
+      <!--</table>-->
+      <table tableName="bsd_level" domainObjectName="Level"  enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false" enableSelectByExample="false" selectByExampleQueryId="false">
+          <!-- 自动生成的属性名和数据库列名一样 true：是 ： false:否 -->
+          <property name="useActualColumnNames" value="false"/>
+          <!-- 生成的SQL中的表名将不会包含schema和catalog前缀 -->
+          <property name="ignoreQualifiersAtRuntime" value="true"/>
+      </table>
+  </context>
+</generatorConfiguration>

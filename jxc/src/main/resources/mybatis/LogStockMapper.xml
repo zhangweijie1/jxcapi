@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.log.LogStockMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.log.LogGoodsStock">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="sku_id" jdbcType="BIGINT" property="skuId"/>
+        <result column="store_id" jdbcType="BIGINT" property="storeId"/>
+        <result column="bill_id" jdbcType="BIGINT" property="billId"/>
+        <result column="bill_stock_id" jdbcType="BIGINT" property="billStockId"/>
+        <result column="stock_cat" jdbcType="VARCHAR" property="stockCat"/>
+        <result column="comego_id" jdbcType="BIGINT" property="comegoId"/>
+        <result column="comego_name" jdbcType="VARCHAR" property="comegoName"/>
+        <result column="quantity_in" jdbcType="INTEGER" property="quantityIn"/>
+        <result column="quantity_out" jdbcType="INTEGER" property="quantityOut"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, sku_id, store_id, bill_id, bill_stock_id, stock_cat, comego_id, comego_name,
+        quantity_in, quantity_out, create_time
+    </sql>
+
+    <select id="selectStockLogBySkuId" resultType="com.mrguo.entity.log.LogGoodsStock">
+        select * from (
+        select b.create_time, b.business_time, tl.direction, b.comego_name,
+        b.bill_no, b.bill_cat, b.bill_cat_name, b.is_cancle as bill_cancle,
+        tl.bill_id, tl.quantity,
+        bs.quantity as stock_quantity,
+        bs.bill_no as bill_stock_no, bs.is_cancle as stock_cancle,
+        store.name as store_name
+        from log_goods_stock tl
+        left join t_bill b on b.id = tl.bill_id
+        left join t_bill_stock bs on bs.bill_relation_id = b.id
+        left join bsd_store store on store.id = b.store_id
+        <where>
+            tl.sku_id = #{record.skuId} and b.bill_cat != 'dispatch'
+            <if test="record.startTime != null and record.startTime != '' and record.endTime != null and record.endTime != ''">
+                and bill.create_time between #{record.startTime} and #{record.endTime}
+            </if>
+            <if test="record.storeId != null and record.storeId != ''">
+                and sl.store_id = #{record.storeId,jdbcType=BIGINT}
+            </if>
+            <if test="record.billNo != null and record.billNo != ''">
+                and bill.bill_no LIKE concat('%',#{record.billNo},'%')
+            </if>
+        </where>
+        UNION All
+        select dis.create_time, dis.business_time as business_time, dis.direction, "" as comego_name,
+        b.bill_no, b.bill_cat, b.bill_cat_name, b.is_cancle as bill_cancle,
+        tl.bill_id, tl.quantity,
+        bs.quantity as stock_quantity,
+        bs.bill_no as bill_stock_no, bs.is_cancle as stock_cancle,
+        store.name as store_name
+        from log_goods_stock tl
+        left join t_bill b on b.id = tl.bill_id
+        left join t_bill_dispatch dis on dis.bill_master_id = b.id
+        left join t_bill_stock bs on bs.bill_relation_id = dis.id
+        left join bsd_store store on store.id = dis.store_id
+        <where>
+            tl.sku_id = #{record.skuId} and b.bill_cat = 'dispatch'
+            <if test="record.startTime != null and record.startTime != '' and record.endTime != null and record.endTime != ''">
+                and bill.create_time between #{record.startTime} and #{record.endTime}
+            </if>
+            <if test="record.storeId != null and record.storeId != ''">
+                and sl.store_id = #{record.storeId,jdbcType=BIGINT}
+            </if>
+            <if test="record.billNo != null and record.billNo != ''">
+                and bill.bill_no LIKE concat('%',#{record.billNo},'%')
+            </if>
+        </where>
+        UNION ALL
+        select
+        sku.create_time, sku.create_time as business_time, '1' as direction, '' as comego_name,
+        '' as bill_no, '0' as bill_cat, '期初库存' as bill_cat_name, '0' as bill_cancle,
+        '0' as bill_id, st.origin_quantity as quantity,
+        st.origin_quantity as stock_quantity,
+        '' as bill_stock_no, '0' as stock_cancle,
+        s.`name` as store_name
+        from bsd_store s
+        left join bsd_goods_stock st on st.store_id = s.id and st.sku_id = #{record.skuId}
+        left join bsd_goods_sku sku on sku.id = st.sku_id
+        <where>
+            sku.id = #{record.skuId}
+            <if test="record.storeId != null and record.storeId != ''">
+                and s.store_id = #{record.storeId,jdbcType=BIGINT}
+            </if>
+        </where>
+        ) as log order by business_time desc, create_time desc
+    </select>
+
+    <select id="getLastDataByBusinessTimeGroupSku" resultType="com.mrguo.entity.log.LogGoodsStock">
+        select
+        s.* from log_goods_stock s
+        right join (
+        select sku_id, max(s.business_time) as business_time from log_goods_stock s
+        inner join t_bill b on b.id = s.bill_id
+        where s.business_time <![CDATA[<]]> #{date} and b.is_cancle = '0'
+        GROUP BY s.sku_id
+        ) sb on sb.sku_id = s.sku_id and sb.business_time = s.business_time
+    </select>
+
+    <insert id="batchInsertLogs" parameterType="com.mrguo.entity.log.LogGoodsStock">
+        insert into bsd_goods_stock_log
+        (id, sku_id, store_id, bill_id, bill_cat,
+        rem_qty_in, rem_qty_out, rem_waite_qty_in, rem_waite_qty_out,
+        comego_id, comego_name, create_time)
+        values
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.id}, #{item.skuId}, #{item.storeId}, #{item.billId},  #{item.billCat},
+            #{item.remQtyIn}, #{item.remQtyOut}, #{item.remWaiteQtyIn}, #{item.remWaiteQtyOut},
+            #{item.comegoId}, #{item.comegoName}, #{item.createTime}
+            )
+        </foreach>
+    </insert>
+</mapper>

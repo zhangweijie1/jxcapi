@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bill.BillSaleMapper">
+
+    <select id="getDataById" resultType="com.mrguo.entity.bill.BillSale">
+        select * from t_bill b
+        left join t_bill_ext_sale e on e.bill_id = b.id
+        where b.id = #{billId}
+    </select>
+
+    <select id="listCustom" resultType="com.mrguo.entity.bill.Bill">
+        SELECT b.*,
+        ifnull(sum(d.quantity),0) as goods_quantity,
+        ifnull(sum(d.change_quantity),0) as change_quantity,
+        ifnull(sum(d.change_quantity2),0) as change_quantity2,
+        ifnull(sum(d.return_quantity),0) as return_quantity,
+        sum(d.quantity * d.unit_multi * gc.price_cost) as amount_cost,
+        store.name as store_name,
+        e.real_name as audit_user_name
+        from t_bill as b
+        <if test="record.saleType == '0'.toString() or record.saleType == '1'.toString()">
+            LEFT JOIN t_bill_ext_sale ets on ets.bill_id = b.id
+        </if>
+        LEFT JOIN bsd_store store on b.store_id = store.id
+        LEFT JOIN sys_employee e on e.id = b.audit_user_id
+        LEFT JOIN t_bill_detail d on d.bill_id = b.id
+        left join log_goods_costprice gc on gc.sku_id = d.sku_id and gc.bill_id = b.id
+        <where>
+            and b.bill_cat = 'sale'
+            <if test="record.isCancle == '0'.toString()">
+                and b.is_cancle = #{record.isCancle}
+            </if>
+            <if test="record.isClose == '0'.toString()">
+                and b.is_close = #{record.isClose}
+            </if>
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.saleType == '0'.toString() or record.saleType == '1'.toString()">
+                and ets.type = #{record.saleType}
+            </if>
+            <if test="record.billNo != null and record.billNo != ''">
+                and b.bill_no LIKE concat('%',#{record.billNo,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.goodsNamestr != null and record.goodsNamestr != ''">
+                and b.goods_namestr LIKE concat('%',#{record.goodsNamestr,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.comegoName != null and record.comegoName != ''">
+                and b.comego_name LIKE concat('%',#{record.comegoName,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.cBeginTime != null and record.cBeginTime != '' and record.cEndTime != null and record.cEndTime != ''">
+                and b.create_time between #{record.cBeginTime} and #{record.cEndTime}
+            </if>
+            <if test="record.bBeginTime != null and record.bBeginTime != '' and record.bEndTime != null and record.bEndTime != ''">
+                and b.business_time between #{record.bBeginTime} and #{record.bEndTime}
+            </if>
+            <if test="record.handUserId != null and record.handUserId != ''">
+                and b.hand_user_id = #{record.handUserId,jdbcType=BIGINT}
+            </if>
+            <if test="record.createUserId != null and record.createUserId != ''">
+                and b.create_user_id = #{record.createUserId,jdbcType=BIGINT}
+            </if>
+            <if test="record.auditStatus != null and record.auditStatus != '' and record.auditStatus != '-1'.toString()">
+                and b.audit_status = #{record.auditStatus,jdbcType=VARCHAR}
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.`bill_no` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.`goods_namestr` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.`remarks` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        group by b.id
+        having 1=1
+        <if test="record.stockStatus == '0'.toString()">
+            and change_quantity = 0
+        </if>
+        <if test="record.stockStatus == '1'.toString()">
+            and change_quantity > 0
+        </if>
+        <if test="record.stockStatus == '2'.toString()">
+            and change_quantity = goods_quantity
+        </if>
+        order by b.create_time desc
+    </select>
+</mapper>

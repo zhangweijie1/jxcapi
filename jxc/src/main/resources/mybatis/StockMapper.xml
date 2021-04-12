@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bsd.StockMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.goods.GoodsStock">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="stock_id" jdbcType="BIGINT" property="stockId"/>
+        <result column="sku_id" jdbcType="BIGINT" property="skuId"/>
+        <result column="store_id" jdbcType="BIGINT" property="storeId"/>
+        <result column="origin_quantity" jdbcType="INTEGER" property="originQuantity"/>
+        <result column="wait_quantity_in" jdbcType="INTEGER" property="waitQuantityIn"/>
+        <result column="wait_quantity_out" jdbcType="INTEGER" property="waitQuantityOut"/>
+        <result column="quantity_min_warning" jdbcType="INTEGER" property="quantityMinWarning"/>
+        <result column="quantity_max_warning" jdbcType="INTEGER" property="quantityMaxWarning"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        stock_id, sku_id, store_id, wait_quantity_in,wait_quantity_out, quantity_min_warning,
+        quantity_max_warning
+    </sql>
+
+    <select id="selectStocksPage" resultType="com.mrguo.vo.basedata.StockOfSkuVo">
+        select sku.id, sku.`code`, sku.`name`,
+        cprice.price_cost as cost_price,
+        ifnull(st.origin_quantity,0) as origin_quantity,
+        ifnull(st.wait_quantity_in,0) as wait_quantity_in,
+        ifnull(st.wait_quantity_out,0) as wait_quantity_out,
+        ifnull(st.quantity_in,0) as quantity_in,
+        ifnull(st.quantity_out,0) as quantity_out,
+        ifnull(st.current_stock,0) as current_stock,
+        u.unit_id_str, u.unit_name_str,
+        u.unit_isbase_str, u.unit_multi_str
+        from bsd_goods_sku sku
+        left join (
+        SELECT sku.id,
+        sum(gs.origin_quantity) as origin_quantity,
+        sum(gs.wait_quantity_in) as wait_quantity_in,
+        sum(gs.wait_quantity_out) as wait_quantity_out,
+        sum(gs.quantity_in) as quantity_in,
+        sum(gs.quantity_out) as quantity_out,
+        sum(gs.origin_quantity + gs.quantity_in - gs.quantity_out) as current_stock
+        from bsd_goods_sku sku
+        LEFT JOIN bsd_goods_stock gs on gs.sku_id = sku.id
+        <where>
+            <if test="record.storeIds.size() > 0">
+                and gs.store_id in
+                <foreach collection="record.storeIds" item="storeId" open="(" close=")" separator=",">
+                    #{storeId}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY sku.id
+        ) st on st.id = sku.id
+        left join bsd_goods_costprice cprice on cprice.sku_id = sku.id
+        left join (
+        select sku.id,
+        GROUP_CONCAT(gu.unit_id) as unit_id_str,
+        GROUP_CONCAT(u.`name`) as unit_name_str,
+        GROUP_CONCAT(gu.`is_base`) as unit_isbase_str,
+        GROUP_CONCAT(gu.`multi`) as unit_multi_str
+        from bsd_goods_sku sku
+        left join bsd_goods_unit gu on gu.sku_id = sku.id
+        left join bsd_unit u on u.id = gu.unit_id
+        GROUP BY sku.id
+        ) u on u.id = sku.id
+        <where>
+            1 = 1
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or sku.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or sku.`specs` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+            <if test="record.catId != null and record.catId != ''">
+                and sku.cat_id like concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.isShowStopUse == '1'">
+                and sku.status = '1'
+            </if>
+            <if test="record.isShowZeroStock == '1'">
+                and st.current_stock > 0
+            </if>
+        </where>
+    </select>
+
+    <select id="selectStockMergeStoreBySkuIds" resultType="com.mrguo.entity.goods.GoodsStock">
+        select sku_id,
+        sum(origin_quantity) as origin_quantity,
+        sum(quantity_in) as quantity_in,
+        sum(quantity_out) as quantity_out,
+        sum(wait_quantity_in) as wait_quantity_in,
+        sum(wait_quantity_out) as wait_quantity_out
+        from bsd_goods_stock st
+         <if test="list.size() > 0">
+             where
+             <foreach collection="list" item="item" index="index" open="(" close=")" separator="or">
+                 sku_id = #{item,jdbcType=BIGINT}
+             </foreach>
+         </if>
+        group by sku_id
+    </select>
+
+    <select id="getStockMergeStoreBySkuId" resultType="com.mrguo.entity.goods.GoodsStock">
+        select sku_id, sum(origin_quantity) as origin_quantity,
+        sum(quantity_in) as quantity_in, sum(quantity_out) as quantity_out,
+        sum(wait_quantity_in) as wait_quantity_in, sum(wait_quantity_out) as wait_quantity_out
+        from bsd_store s
+        inner join bsd_goods_stock st on st.store_id = s.id and st.sku_id = #{skuId,jdbcType=BIGINT}
+        group by sku_id
+    </select>
+
+    <!--查询某商品的库存分布情况-->
+    <select id="selectStockGroupStoreBySkuId" resultType="com.mrguo.entity.goods.GoodsStock">
+        select
+        st.id,
+        st.`name` as store_name,
+        ifnull(q.origin_quantity,0) as origin_quantity,
+        ifnull(q.quantity_in,0) as quantity_in,
+        ifnull(q.quantity_out,0) as quantity_out,
+        ifnull(q.wait_quantity_in,0) as wait_quantity_in,
+        ifnull(q.wait_quantity_out,0) as wait_quantity_out
+        from bsd_store st
+        left join (
+            select
+            gs.store_id,
+            sum(origin_quantity) as origin_quantity,
+            sum(quantity_in) as quantity_in,
+            sum(quantity_out) as quantity_out,
+            sum(wait_quantity_in) as wait_quantity_in,
+            sum(wait_quantity_out) as wait_quantity_out
+            from bsd_goods_stock gs
+            where gs.sku_id = #{skuId}
+            group by gs.store_id
+        ) q on q.store_id = st.id
+    </select>
+
+    <select id="selectStockBySkuIdsAndStoreId" resultType="com.mrguo.entity.goods.GoodsStock">
+        select * from bsd_goods_stock
+        <where>
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator="or">
+                sku_id = #{item} and store_id=#{storeId}
+            </foreach>
+        </where>
+    </select>
+</mapper>

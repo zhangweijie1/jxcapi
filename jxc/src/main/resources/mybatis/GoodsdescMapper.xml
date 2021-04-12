@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.goods.GoodsdescMapper">
+  <resultMap id="BaseResultMap" type="com.mrguo.entity.goods.GoodsDesc">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="goods_id" jdbcType="BIGINT" property="goodsId" />
+    <result column="introduction" jdbcType="VARCHAR" property="introduction" />
+    <result column="specification_items" jdbcType="VARCHAR" property="specificationItems" />
+    <result column="custom_attribute_items" jdbcType="VARCHAR" property="customAttributeItems" />
+    <result column="item_images" jdbcType="VARCHAR" property="itemImages" />
+    <result column="package_list" jdbcType="VARCHAR" property="packageList" />
+    <result column="sale_service" jdbcType="VARCHAR" property="saleService" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    goods_id, introduction, specification_items, custom_attribute_items, item_images, 
+    package_list, sale_service
+  </sql>
+</mapper>

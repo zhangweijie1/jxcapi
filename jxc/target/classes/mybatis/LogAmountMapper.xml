@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.log.LogAmountMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.log.LogAmount">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="cat" jdbcType="VARCHAR" property="cat"/>
+        <result column="comego_id" jdbcType="BIGINT" property="comegoId"/>
+        <result column="bill_id" jdbcType="BIGINT" property="billId"/>
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+        <result column="remain_amount" jdbcType="DECIMAL" property="remainAmount"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, cat, comego_id, bill_id, amount, remain_amount, create_time
+    </sql>
+
+    <select id="listCustom" resultType="java.util.Map">
+        select * from (
+            -- 转账
+            select la.bill_id, t.create_time as business_time, la.create_time,
+            null as bill_no, null as comego_name, 'account_trans' as bill_cat,
+            if(la.cat='1',"账户转入","账户转出") as bill_cat_name,
+            e.`real_name` as hand_user_name,
+            if(la.cat='1',bin.`name`,bout.`name`) as account_name,
+            la.cat, la.is_cancle_bill, la.amount, la.remain_amount, t.remarks
+            from log_amount la
+            inner join fin_account_trans t on t.id = la.bill_id
+            left join bsd_account bin on bin.id = t.account_in
+            left join bsd_account bout on bout.id = t.account_out
+            left join sys_employee e on e.id = t.hand_user_id
+            UNION ALL
+            -- 一般单据
+            select la.bill_id, b.business_time, la.create_time,
+            b.bill_no, b.comego_name, b.bill_cat,
+            b.bill_cat_name,
+            e.`real_name` as hand_user_name,
+            ac.name as account_name,
+            la.cat, la.is_cancle_bill, la.amount, la.remain_amount, b.remarks
+            from log_amount la
+            inner join t_bill b on b.id = la.bill_id
+            left join bsd_account ac on ac.id = b.account_id
+            left join sys_employee e on e.id = b.hand_user_id
+            UNION ALL
+            -- 财务单据
+            select la.bill_id, b.business_time, la.create_time,
+            b.bill_no, b.comego_name, b.bill_cat,
+            b.bill_cat_name,
+            e.`real_name` as hand_user_name,
+            ac.name as account_name,
+            la.cat, la.is_cancle_bill, la.amount, la.remain_amount, b.remarks
+            from log_amount la
+            inner join fin_bill b on b.id = la.bill_id
+            left join bsd_account ac on ac.id = b.account_id
+            left join sys_employee e on e.id = b.hand_user_id
+            UNION ALL
+            -- 期初
+            select
+            '' as bill_id, a.create_time as business_time, a.create_time,
+            null as bill_no, null as comego_name, '0' as bill_cat,
+            '期初' as bill_cat_name,
+            e.`real_name` as hand_user_name,
+            a.`name` as account_name,
+            '1' as cat, null as is_cancle_bill, a.origin_amount as amount, a.origin_amount as remain_amount, '' as remarks
+            from bsd_account a
+            left join sys_employee e on e.id = a.create_user_id
+        ) a order by business_time desc, create_time desc
+    </select>
+</mapper>

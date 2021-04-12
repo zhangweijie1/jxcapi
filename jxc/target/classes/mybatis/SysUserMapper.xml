@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.mrguo.dao.sys.SysUserMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.sys.SysUser">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="uid" property="uid" jdbcType="VARCHAR"/>
+        <result column="username" property="username" jdbcType="VARCHAR"/>
+        <result column="password" property="password" jdbcType="VARCHAR"/>
+        <result column="user_type_id" property="userTypeId" jdbcType="VARCHAR"/>
+        <result column="email" property="email" jdbcType="VARCHAR"/>
+        <result column="phonenum" property="phonenum" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="activation_time" property="activationTime" jdbcType="TIMESTAMP"/>
+        <result column="overdue_time" property="overdueTime" jdbcType="TIMESTAMP"/>
+        <result column="is_activation" property="isActivation" jdbcType="TINYINT"/>
+        <result column="is_frozen" property="isFrozen" jdbcType="TINYINT"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        uid, username, user_type_id, email, phonenum, create_time, update_time,
+        activation_time, overdue_time, is_activation, is_frozen
+    </sql>
+
+    <select id="listCustom" resultType="com.mrguo.entity.sys.SysUser">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM sys_user as u
+        <where>
+            <if test="user.keywords != null and user.keywords != ''">
+                and u.username LIKE CONCAT('%', #{user.keywords}, '%')
+                or u.phonenum LIKE CONCAT('%', #{user.keywords}, '%')
+            </if>
+        </where>
+
+    </select>
+
+    <select id="selectListDataByRoleId" resultType="com.mrguo.entity.sys.SysUser">
+        select user_id as uid from sys_user_role where role_id = #{roleId}
+    </select>
+
+    <select id="selectPermissionsByUserId" resultType="java.lang.String">
+        SELECT DISTINCT rp.permission_id from sys_role_permission rp
+        left join sys_role r on r.id = rp.role_id
+        left join sys_user_role ur on ur.role_id = r.id
+        left join sys_user u on u.uid = ur.user_id
+        where u.uid = #{userId,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectUserInfoByUserId" resultType="com.mrguo.dto.sys.UserInfoApp">
+        select e.id, e.real_name, u.username,
+        (
+            select count(1) from sys_employee
+            WHERE `type` in ('0','2')
+        ) as user_count
+        from sys_user u
+        left join sys_employee e on e.id = u.uid
+        where u.uid = #{userId}
+    </select>
+</mapper>

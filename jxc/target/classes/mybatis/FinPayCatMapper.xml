@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.fin.FinCapitalCatMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.fin.FinCapitalCat">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="direction" jdbcType="VARCHAR" property="direction"/>
+        <result column="remarks" jdbcType="VARCHAR" property="remarks"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, name, direction, remarks, create_time, update_time
+    </sql>
+
+    <select id="listCustom" resultType="com.mrguo.entity.fin.FinCapitalCat">
+        select * from fin_capital_cat
+        <where>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                  `name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                  or `remarks` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+            <if test="record.direction != null and record.direction != ''">
+                and direction = #{record.direction,jdbcType=VARCHAR}
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+</mapper>

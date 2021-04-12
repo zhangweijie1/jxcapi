@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bsd.UnitMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.bsd.Unit">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="is_default" jdbcType="VARCHAR" property="isDefault"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, `name`, status, is_default, remark
+    </sql>
+
+    <select id="listPage" resultType="com.mrguo.entity.bsd.Unit">
+        select * from bsd_unit
+        <where>
+            1=1
+            <if test="record.keywords != null and record.keywords != ''">
+                and name LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+            </if>
+        </where>
+    </select>
+
+    <select id="listOptions" resultType="com.mrguo.entity.bsd.UnitDto">
+        select id as `value`, `name` as label, is_default
+        from bsd_unit
+        <where>
+            status = '1'
+            <if test="keywords != null and keywords != ''">
+                and `name` LIKE concat('%',#{keywords,jdbcType=VARCHAR},'%')
+            </if>
+        </where>
+    </select>
+
+    <select id="listDataByNames" resultType="com.mrguo.entity.bsd.Unit">
+        select * from bsd_unit
+        <if test="list.size() > 0">
+            where
+            <foreach collection="list" item="name" open="" close="" separator="or">
+                name = #{name}
+            </foreach>
+        </if>
+    </select>
+
+</mapper>

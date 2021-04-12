@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bill.BillExtSaleMapper">
+  <resultMap id="BaseResultMap" type="com.mrguo.entity.bill.BillExtSale">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="bill_id" jdbcType="BIGINT" property="billId" />
+    <result column="delivery_date" jdbcType="TIMESTAMP" property="deliveryDate" />
+    <result column="contacter" jdbcType="VARCHAR" property="contacter" />
+    <result column="phone" jdbcType="VARCHAR" property="phone" />
+    <result column="delivery_address" jdbcType="VARCHAR" property="deliveryAddress" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    bill_id, delivery_date, contacter, phone, delivery_address
+  </sql>
+</mapper>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.origin.OriginComegoDebtMapper">
+  <resultMap id="BaseResultMap" type="com.mrguo.entity.origin.OriginComegoDebt">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <result column="id" jdbcType="BIGINT" property="id" />
+    <result column="debt" jdbcType="DECIMAL" property="debt" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="cat" jdbcType="VARCHAR" property="cat" />
+  </resultMap>
+</mapper>

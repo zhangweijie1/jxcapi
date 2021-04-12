@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.mrguo.dao.sys.SysPermissionMapper" >
+  <resultMap id="BaseResultMap" type="com.mrguo.entity.sys.SysPermission" >
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="per_id" property="perId" jdbcType="VARCHAR" />
+    <result column="per_name" property="perName" jdbcType="VARCHAR" />
+    <result column="resource" property="resource" jdbcType="VARCHAR" />
+    <result column="m_icon" property="mIcon" jdbcType="VARCHAR" />
+    <result column="route_name" property="routeName" jdbcType="VARCHAR" />
+    <result column="m_component" property="mComponent" jdbcType="VARCHAR" />
+    <result column="m_hide_in_menu" property="mHideInMenu" jdbcType="TINYINT" />
+    <result column="m_not_cache" property="mNotCache" jdbcType="TINYINT" />
+    <result column="route_redirect" property="routeRedirect" jdbcType="VARCHAR" />
+    <result column="per_parent" property="perParent" jdbcType="VARCHAR" />
+    <result column="status" property="status" jdbcType="TINYINT" />
+    <result column="priority" property="priority" jdbcType="INTEGER" />
+    <result column="remark" property="remark" jdbcType="VARCHAR" />
+  </resultMap>
+  <sql id="Base_Column_List" >
+    <!--
+      WARNING - @mbg.generated
+    -->
+    per_id, per_name, resource, m_icon, route_name, m_component, m_hide_in_menu, m_not_cache,
+    route_redirect, per_parent, status, priority, remark
+  </sql>
+
+  <select id="selectPermissionsByRoleId" resultType="com.mrguo.entity.sys.SysPermission">
+    select DISTINCT sp.per_id, sp.per_name, sp.per_parent
+    from sys_role_permission srp
+    inner join sys_permission sp on sp.per_id = srp.permission_id and srp.role_id = #{roleId}
+  </select>
+</mapper>

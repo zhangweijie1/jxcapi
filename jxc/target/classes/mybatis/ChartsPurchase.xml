@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.charts.PurchaseChartsMapper">
+
+    <select id="listByGoodGroupByDay" resultType="com.mrguo.dto.charts.Chart">
+        select DATE_FORMAT(b.business_time,'%d') as time,
+        sum(d.quantity * d.price) as amount_payable
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        <where>
+            b.bill_cat = 'purchase' and d.sku_id = #{record.skuId}
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        GROUP BY time
+    </select>
+
+    <select id="listByGoodGroupbyMonth" resultType="com.mrguo.dto.charts.Chart">
+        select DATE_FORMAT(b.business_time,'%m') as time,
+        sum(d.quantity * d.price) as amount_payable
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        <where>
+            b.bill_cat = 'purchase' and d.sku_id = #{record.skuId}
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        GROUP BY time
+    </select>
+
+    <select id="listByGoodGroupbyYear" resultType="com.mrguo.dto.charts.Chart">
+        select DATE_FORMAT(b.business_time,'%Y') as time,
+        sum(d.quantity * d.price) as amount_payable
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        <where>
+            b.bill_cat = 'purchase' and d.sku_id = #{record.skuId}
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        GROUP BY time
+    </select>
+
+    <select id="getBillRangeTimeByGood" resultType="com.mrguo.dto.charts.Chart">
+        select min(b.business_time) as begin_time, max(b.business_time) as end_time
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        where b.bill_cat = 'purchase' and d.sku_id = #{skuId}
+    </select>
+
+
+    <select id="listByComegoGroupByDay" resultType="com.mrguo.dto.charts.Chart">
+        select DATE_FORMAT(b.business_time,'%d') as time,
+        sum(d.quantity * d.price) as amount_payable
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        <where>
+            b.bill_cat = 'purchase' and b.comego_id = #{record.comegoId}
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        GROUP BY time
+    </select>
+
+    <select id="listByComegoGroupbyMonth" resultType="com.mrguo.dto.charts.Chart">
+        select DATE_FORMAT(b.business_time,'%m') as time,
+        sum(d.quantity * d.price) as amount_payable
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        <where>
+            b.bill_cat = 'purchase' and b.comego_id = #{record.comegoId}
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        GROUP BY time
+    </select>
+
+    <select id="listByComegoGroupbyYear" resultType="com.mrguo.dto.charts.Chart">
+        select DATE_FORMAT(b.business_time,'%Y') as time,
+        sum(d.quantity * d.price) as amount_payable
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        <where>
+            b.bill_cat = 'purchase' and b.comego_id = #{record.comegoId}
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        GROUP BY time
+    </select>
+
+    <select id="getBillRangeTimeByComego" resultType="com.mrguo.dto.charts.Chart">
+        select min(b.business_time) as begin_time, max(b.business_time) as end_time
+        from t_bill b
+        where b.bill_cat = 'purchase' and b.comego_id = #{comegoId}
+    </select>
+</mapper>

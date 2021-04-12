@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bsd.AccountMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.bsd.Account">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="bank_name" jdbcType="VARCHAR" property="bankName"/>
+        <result column="account" jdbcType="VARCHAR" property="account"/>
+        <result column="remainder" jdbcType="DECIMAL" property="remainder"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="is_default" jdbcType="VARCHAR" property="isDefault"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, `name`, bank_name, bank_no, account, origin_amount, amount,
+        status, is_default, create_time, update_time, remarks
+    </sql>
+
+    <select id="listPage" resultType="com.mrguo.entity.bsd.Account">
+        SELECT
+        a.id, a.`name`, a.bank_name, a.bank_no, a.account, a.origin_amount, a.amount,
+        a.status, a.is_default, a.remarks
+        FROM bsd_account a
+        <where>
+            <if test="record.keywords != null and record.keywords != ''">
+                or a.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or a.`bank_name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+            </if>
+        </where>
+    </select>
+
+    <select id="selectDataByIds" resultType="com.mrguo.entity.bsd.Account">
+        select * from bsd_account
+        <where>
+            <if test="list.size() != 0">
+                id in
+                <foreach collection="list" item="id" index="index" open="(" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="listOptions" resultType="com.mrguo.entity.bsd.Account">
+        select id as `value`, `name` as label from bsd_account
+    </select>
+
+</mapper>

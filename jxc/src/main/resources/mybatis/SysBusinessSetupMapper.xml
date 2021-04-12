@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.sys.SysBusinessSetupMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.sys.SysBusinessSetup">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <result column="value" jdbcType="VARCHAR" property="value"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        `value`
+    </sql>
+</mapper>

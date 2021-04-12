@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.GoodsMapper">
+  <resultMap id="BaseResultMap" type="com.mrguo.entity.goods.GoodsSpu">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="inventory_quantity" jdbcType="INTEGER" property="inventoryQuantity" />
+    <result column="min_num" jdbcType="INTEGER" property="minNum" />
+    <result column="model" jdbcType="VARCHAR" property="model" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="producer" jdbcType="VARCHAR" property="producer" />
+    <result column="purchasing_price" jdbcType="REAL" property="purchasingPrice" />
+    <result column="remarks" jdbcType="VARCHAR" property="remarks" />
+    <result column="selling_price" jdbcType="REAL" property="sellingPrice" />
+    <result column="unit" jdbcType="VARCHAR" property="unit" />
+    <result column="type_id" jdbcType="INTEGER" property="typeId" />
+    <result column="state" jdbcType="INTEGER" property="state" />
+    <result column="last_purchasing_price" jdbcType="REAL" property="lastPurchasingPrice" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    id, code, inventory_quantity, min_num, model, name, producer, purchasing_price, remarks, 
+    selling_price, unit, type_id, state, last_purchasing_price
+  </sql>
+
+  <select id="listCustom"  resultType="com.mrguo.vo.goods.GoodsAssemblyVo">
+    SELECT gs.*, gst.name as type_name FROM bsd_goods as gs LEFT JOIN t_goods_cat as gst on gs.type_id = gst.id
+    <where>
+      <if test="goodsSpu.id != null and goodsSpu.id != ''">
+        and gs.id = #{goodsSpu.id}
+      </if>
+      <if test="goodsSpu.name != null and goodsSpu.name != ''">
+        and gs.name LIKE CONCAT('%', #{goodsSpu.name}, '%')
+        or  gs.code LIKE CONCAT('%', #{goodsSpu.name}, '%')
+        or  gs.model LIKE CONCAT('%', #{goodsSpu.name}, '%')
+      </if>
+      <if test="goodsSpu.typeId != null and goodsSpu.typeId != ''">
+        and gs.type_id = #{goodsSpu.typeId}
+      </if>
+    </where>
+  </select>
+</mapper>

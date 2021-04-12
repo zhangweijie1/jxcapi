@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.fin.FinAccountTransMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.fin.FinAccountTrans">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="account_out" jdbcType="BIGINT" property="accountOut"/>
+        <result column="account_in" jdbcType="BIGINT" property="accountIn"/>
+        <result column="trans_time_out" jdbcType="TIMESTAMP" property="transTimeOut"/>
+        <result column="trans_time_in" jdbcType="TIMESTAMP" property="transTimeIn"/>
+        <result column="amount" jdbcType="DECIMAL" property="amount"/>
+        <result column="procedure_amount" jdbcType="DECIMAL" property="procedureAmount"/>
+        <result column="procedure_user" jdbcType="VARCHAR" property="procedureUser"/>
+        <result column="hand_user_id" jdbcType="BIGINT" property="handUserId"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, account_out, account_in, trans_time_out, trans_time_in, amount, procedure_amount,
+        procedure_user, hand_user_id, create_time, update_time
+    </sql>
+
+    <select id="listCustom" resultType="com.mrguo.entity.fin.FinAccountTrans">
+        select fat.*,
+        ta_in.name as account_name_in, ta_out.name as account_name_out,
+        sehand.real_name as hand_user_name, secreate.real_name as create_user_name
+        from fin_account_trans fat
+        left join bsd_account ta_in on ta_in.id = fat.account_in
+        left join bsd_account ta_out on ta_out.id = fat.account_out
+        left join sys_employee sehand on sehand.id = fat.hand_user_id
+        left join sys_employee secreate on secreate.id = fat.create_user_id
+        <where>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                ta_in.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or ta_out.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+            <if test="record.isCancle != null and record.isCancle != ''">
+                and is_cancle = #{record.isCancle,jdbcType=VARCHAR}
+            </if>
+        </where>
+        order by fat.create_time desc
+    </select>
+
+    <select id="selectOneById" resultType="com.mrguo.entity.fin.FinAccountTrans">
+        select t.*,
+        bin.`name` as account_name_in,
+        bout.`name` as account_name_out,
+        eh.real_name as hand_user_name,
+        ch.real_name as create_user_name
+        from fin_account_trans t
+        left join bsd_account bin on bin.id = t.account_in
+        left join bsd_account bout on bout.id = t.account_out
+        left join sys_employee eh on eh.id = t.hand_user_id
+        left join sys_employee ch on ch.id = t.create_user_id
+        where t.id = #{id}
+    </select>
+</mapper>

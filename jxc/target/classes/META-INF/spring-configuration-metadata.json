@@ -1,0 +1,37 @@
+{
+  "hints": [],
+  "groups": [
+    {
+      "sourceType": "com.mrguo.config.StaticConfig",
+      "name": "init",
+      "type": "com.mrguo.config.StaticConfig"
+    }
+  ],
+  "properties": [
+    {
+      "sourceType": "com.mrguo.config.StaticConfig",
+      "name": "init.api-white-list",
+      "type": "java.util.List<java.lang.String>"
+    },
+    {
+      "sourceType": "com.mrguo.config.StaticConfig",
+      "name": "init.filter-table-name",
+      "type": "java.util.List<java.lang.String>"
+    },
+    {
+      "sourceType": "com.mrguo.config.StaticConfig",
+      "name": "init.permissions",
+      "type": "java.util.Map<java.lang.String,java.lang.String>"
+    },
+    {
+      "sourceType": "com.mrguo.config.StaticConfig",
+      "name": "init.permissions-parent",
+      "type": "java.util.Map<java.lang.String,java.lang.String>"
+    },
+    {
+      "sourceType": "com.mrguo.config.StaticConfig",
+      "name": "init.price-types",
+      "type": "java.util.List<com.mrguo.entity.config.PriceType>"
+    }
+  ]
+}

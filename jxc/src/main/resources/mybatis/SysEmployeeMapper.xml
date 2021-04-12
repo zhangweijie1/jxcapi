@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.sys.SysEmployeeMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.sys.SysEmployee">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="real_name" jdbcType="VARCHAR" property="realName"/>
+        <result column="sex" jdbcType="VARCHAR" property="sex"/>
+        <result column="phone" jdbcType="VARCHAR" property="phone"/>
+        <result column="email" jdbcType="VARCHAR" property="email"/>
+        <result column="address" jdbcType="VARCHAR" property="address"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, real_name, sex, phone,
+        email, address, status, `type`, create_time,
+        update_time
+    </sql>
+
+    <select id="listPage" resultType="com.mrguo.entity.sys.SysEmployee">
+        SELECT e.*, GROUP_CONCAT(r.role_name) as role_name,
+        u.username as username
+        from sys_employee e
+        LEFT JOIN sys_user u on u.uid = e.id
+        LEFT JOIN sys_user_role ur on ur.user_id = u.uid
+        LEFT JOIN sys_role r on r.id = ur.role_id
+        <where>
+            and e.type in
+            <foreach collection="types" item="type" index="index" open="(" close=")" separator=",">
+                #{type}
+            </foreach>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                e.`real_name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or e.`phone` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or u.`username` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY e.id
+    </select>
+
+    <select id="getDataById" resultType="com.mrguo.entity.sys.SysEmployee">
+        SELECT e.*, u.username as username from sys_employee e
+        LEFT JOIN sys_user u on u.uid = e.id
+        <where>
+            and e.id = #{id,jdbcType=BIGINT}
+        </where>
+    </select>
+
+    <select id="getRolesByUserId" resultType="java.lang.String">
+        select role_id as id from sys_user_role
+        where user_id = #{userId}
+    </select>
+
+    <select id="listOptions" resultType="com.mrguo.entity.sys.SysEmployee">
+        SELECT id as value, real_name as label, `type` from sys_employee
+        <where>
+            <if test="record.id != null and record.id != ''">
+                and id = #{record.id}
+            </if>
+            <if test="record.types != null and record.types.size > 0">
+                and `type` in
+                <foreach collection="record.types" item="type" index="index" open="(" close=")" separator=",">
+                    #{type}
+                </foreach>
+            </if>
+        </where>
+    </select>
+</mapper>

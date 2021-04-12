@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.goods.GoodsspuMapper">
+  <resultMap id="BaseResultMap" type="com.mrguo.entity.goods.GoodsSpu">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="spu_id" jdbcType="BIGINT" property="spuId" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="caption" jdbcType="VARCHAR" property="caption" />
+    <result column="specs_list" jdbcType="VARCHAR" property="specsList" />
+    <result column="supplier_name" jdbcType="VARCHAR" property="supplierName" />
+    <result column="supplier_id" jdbcType="BIGINT" property="supplierId" />
+    <result column="is_enable_specs" jdbcType="VARCHAR" property="isEnableSpecs" />
+    <result column="is_delete" jdbcType="VARCHAR" property="isDelete" />
+    <result column="brand_id" jdbcType="BIGINT" property="brandId" />
+    <result column="cat_id" jdbcType="BIGINT" property="catId" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="create_user" jdbcType="BIGINT" property="createUser" />
+    <result column="update_user" jdbcType="BIGINT" property="updateUser" />
+    <result column="remarks" jdbcType="VARCHAR" property="remarks" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    spu_id, code, `name`, caption, specs_list, supplier_name, supplier_id,
+    is_enable_specs, is_delete, brand_id, cat_id, create_time, update_time,
+    create_user, update_user, remarks
+  </sql>
+</mapper>

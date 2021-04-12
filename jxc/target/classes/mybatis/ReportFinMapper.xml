@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.report.ReportFinMapper">
+
+    <select id="selectRece" resultType="com.mrguo.dto.report.ProfitRece">
+        select
+        sum(amount_payable - sale_cost) as sale_profit,
+        sum(amount_other) as amount_other,
+        sum(sale_tax) as sale_tax,
+        (
+        select sum(amount_paid) from fin_bill b
+        <where>
+            b.bill_cat = 'fin_dayily_in' and b.is_cancle = '0'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        ) as daily_in,
+        (
+        select sum((di.real_qty - di.book_qty) * lgc.price_cost) as inventory
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        left join t_bill_detail_ext_inventory di on di.id = d.id
+        left join log_goods_costprice lgc on lgc.bill_id = d.bill_id and lgc.sku_id = d.sku_id
+        <where>
+            b.bill_cat = 'inventory' and b.is_cancle = '0' and <![CDATA[di.real_qty > di.book_qty]]>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        ) as inventory,
+        (
+        select sum(amount_discount) as pay_discount
+        from fin_bill b
+        <where>
+            b.bill_cat = 'fin_comego_out' and b.is_cancle = '0'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        ) as pay_discount,
+        (
+        select sum(amount_other) as purchase_return_other from t_bill WHERE bill_cat = 'purchase_return'
+        ) as purchase_return_other
+        from (
+            select
+            b.amount_payable,
+            b.amount_other,
+            sum(d.tax_amount) as sale_tax,
+            sum(d.quantity * d.unit_multi * lgc.price_cost) as sale_cost
+            from t_bill b
+            left join t_bill_detail d on d.bill_id = b.id
+            left join log_goods_costprice lgc on lgc.bill_id = d.bill_id and lgc.sku_id = d.sku_id
+            <where>
+                b.bill_cat = 'sale' and b.is_cancle = '0'
+                <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                    and b.business_time between #{record.beginTime} and #{record.endTime}
+                </if>
+            </where>
+            GROUP BY b.id
+            order by b.create_time desc
+        ) sale
+    </select>
+
+
+    <select id="selectPay" resultType="com.mrguo.dto.report.ProfitPay">
+        select
+        sum(b.amount_other) as purchase_other, sum(d.tax_amount) as tax,
+        (
+        select sum(amount_paid) from fin_bill b
+        <where>
+            b.bill_cat = 'fin_dayily_out' and b.is_cancle = '0'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        ) as dayily_out,
+        (
+        select sum((di.book_qty - di.real_qty) * lgc.price_cost) as inventory
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        left join t_bill_detail_ext_inventory di on di.id = d.id
+        left join log_goods_costprice lgc on lgc.bill_id = d.bill_id and lgc.sku_id = d.sku_id
+        <where>
+            b.bill_cat = 'inventory' and b.is_cancle = '0' and <![CDATA[di.real_qty < di.book_qty]]>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        ) as inventory,
+        (
+        select sum(amount_discount) as pay_discount from fin_bill b
+        <where>
+            b.bill_cat = 'fin_comego_in' and b.is_cancle = '0'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        ) as rece_discount,
+        (
+        select sum(procedure_amount) from fin_account_trans b
+        <where>
+            b.is_cancle = '0'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        ) as trans_procedure,
+        (
+        select sum(amount_other) from t_bill b
+        <where>
+            b.bill_cat = 'sale_return' and b.is_cancle = '0'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        ) as sale_return_other,
+        (
+        select sum((c.price_cost - d.price) * d.quantity) from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        left join log_goods_costprice c on c.sku_id = d.sku_id and c.bill_id = d.bill_id
+        <where>
+            b.bill_cat = 'purchase_return' and b.is_cancle = '0'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        ) as purchase_return_dis,
+        (
+        select sum(amount_other) from t_bill b
+        <where>
+            b.bill_cat = 'dispatch' and b.is_cancle = '0'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        ) as dispatch_other,
+        (
+        select sum(amount_transport) from t_bill_stock b
+        <where>
+            b.is_cancle = '0' and b.direction = '0'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        ) as stock_out_freight
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        <where>
+            b.bill_cat = 'purchase' and b.is_cancle = '0'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectPerformanceGroupByHandUserId" resultType="java.util.Map">
+        select * from (
+            select e.real_name, u.username,
+            sum(if(b.bill_cat = 'sale',d.quantity * d.unit_multi,0)) as qty_in_base,
+            sum(if(b.bill_cat = 'sale_return',d.quantity * d.unit_multi,0)) as return_qty_in_base,
+            count(DISTINCT case when b.bill_cat = 'sale' then b.id end) as bill_count,
+            count(DISTINCT case when b.bill_cat = 'sale_return' then b.id end) as return_bill_count,
+            sum(if(b.bill_cat = 'sale',b.amount_payable,0)) as amount_payable,
+            sum(if(b.bill_cat = 'sale_return',b.amount_payable,0)) as return_amount_payable,
+            sum(if(b.bill_cat = 'sale',b.amount_discount,0)) as amount_discount,
+            sum(if(b.bill_cat = 'sale',lgc.price_cost * d.quantity * d.unit_multi,0)) as cost_price_total
+            from t_bill_detail d
+            left join t_bill b on b.id = d.bill_id
+            left join sys_employee e on e.id = b.hand_user_id
+            left join sys_user u on u.uid = b.hand_user_id
+            left join log_goods_costprice lgc on lgc.sku_id = d.sku_id and lgc.bill_id = d.bill_id
+            <where>
+                b.bill_cat in ('sale','sale_return') and b.is_cancle = '0'
+                <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                    and b.business_time between #{record.beginTime} and #{record.endTime}
+                </if>
+                <if test="record.keywords != null and record.keywords != ''">
+                    and (
+                    e.real_name LIKE concat(#{record.keywords,jdbcType=VARCHAR},'%')
+                    or u.username LIKE concat(#{record.keywords,jdbcType=VARCHAR},'%')
+                    )
+                </if>
+            </where>
+            GROUP BY b.hand_user_id
+        ) s
+        <where>
+            <if test='record.isShowZero == "0"'>
+                s.bill_count > 0
+            </if>
+        </where>
+    </select>
+
+    <select id="selectMaxSaleHandUser" resultType="java.util.Map">
+        select
+        e.real_name as hand_user_name,
+        sum(amount_payable) as user_amount_payable
+        from t_bill b
+        left join sys_employee e on e.id = b.hand_user_id
+        <where>
+            b.bill_cat = 'sale'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        GROUP BY b.hand_user_id
+        ORDER BY user_amount_payable desc limit 1;
+    </select>
+
+    <select id="selectCountSaleBill" resultType="java.util.Map">
+        select
+        count(1) as bill_count,
+        sum(amount_payable) as amount_payable,
+        (
+            select sum(d.quantity * d.unit_multi * c.price_cost) as price_cost_total
+            from t_bill b
+            left join t_bill_detail d on d.bill_id = b.id
+            left join log_goods_costprice c on c.bill_id = d.bill_id and c.sku_id = d.sku_id
+            <where>
+                b.is_cancle = "0" and b.bill_cat = "sale"
+                <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                    and b.business_time between #{record.beginTime} and #{record.endTime}
+                </if>
+            </where>
+        ) as price_cost_total
+        from t_bill b
+        <where>
+            b.bill_cat = 'sale'
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+    </select>
+</mapper>

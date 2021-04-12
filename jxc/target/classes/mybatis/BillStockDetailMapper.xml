@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bill.BillStockDetailMapper">
+  <resultMap id="BaseResultMap" type="com.mrguo.entity.bill.BillStockDetail">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="bill_id" jdbcType="BIGINT" property="billId" />
+    <result column="sku_id" jdbcType="BIGINT" property="skuId" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="quantity" jdbcType="INTEGER" property="quantity" />
+    <result column="price" jdbcType="DECIMAL" property="price" />
+    <result column="total" jdbcType="DECIMAL" property="total" />
+    <result column="unit" jdbcType="VARCHAR" property="unit" />
+    <result column="options" jdbcType="VARCHAR" property="options" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    id, bill_id, sku_id, code, name, quantity, price, total, unit, options
+  </sql>
+</mapper>

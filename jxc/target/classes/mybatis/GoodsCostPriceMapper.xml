@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.goods.GoodsCostPriceMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.goods.GoodsCostPrice">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="sku_id" jdbcType="BIGINT" property="skuId"/>
+        <result column="price_cost" jdbcType="DECIMAL" property="priceCost"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        sku_id, price_cost
+    </sql>
+
+    <select id="listCostPriceAndStockBySkus" resultType="com.mrguo.entity.goods.GoodsCostPrice">
+        select bgcp.sku_id, bgcp.price_cost,
+        sum(st.origin_quantity + st.quantity_in - st.quantity_out) as qty
+        from bsd_goods_costprice bgcp
+        left join bsd_goods_stock st on st.sku_id = bgcp.sku_id
+        <where>
+            bgcp.sku_id in
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item,jdbcType=BIGINT}
+            </foreach>
+        </where>
+        GROUP BY bgcp.sku_id
+    </select>
+</mapper>

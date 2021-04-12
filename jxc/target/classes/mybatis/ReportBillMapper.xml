@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.ReportBillMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.bill.Bill">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="bill_no" jdbcType="VARCHAR" property="billNo"/>
+        <result column="amount_payable" jdbcType="DECIMAL" property="amountPayable"/>
+        <result column="amount_paid" jdbcType="DECIMAL" property="amountPaid"/>
+        <result column="create_user_id" jdbcType="BIGINT" property="createUserId"/>
+        <result column="update_user_id" jdbcType="BIGINT" property="updateUserId"/>
+        <result column="remarks" jdbcType="VARCHAR" property="remarks"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, bill_no, amount_payable, amount_paid, create_user_id, update_user_id,
+        remarks, create_time, update_time
+    </sql>
+
+    <select id="listSaleReportByGoods" resultType="com.mrguo.entity.bill.BillDetail">
+        select bd.sku_id, gs.code, gs.name, gs.specs, gs.unitbase,
+        sum(bd.quantity * bd.unit_multi) as quantity,
+        sum(b.amount_payable) as amount_payable
+        from t_bill_detail bd
+        left join t_bill b on b.id = bd.bill_id
+        left join bsd_goods_sku gs on gs.id = bd.sku_id
+        where b.bill_cat = 'sale'
+        group by bd.sku_id
+    </select>
+
+    <select id="listSaleReportByCustomer" resultType="com.mrguo.entity.bill.BillDetail">
+        select tc.code, tc.name,
+        sum(bd.quantity * bd.unit_multi) as quantity,
+        sum(b.amount_payable) as amount_payable
+        from t_bill_detail bd
+        left join t_bill b on b.id = bd.bill_id
+        left join t_customer tc on tc.id = b.comego_id
+        where b.bill_cat = 'sale'
+        group by b.comego_id
+    </select>
+
+    <select id="" resultType="com.mrguo.entity.bill.BillDetail">
+
+    </select>
+</mapper>

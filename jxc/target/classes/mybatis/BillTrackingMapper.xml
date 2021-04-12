@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bill.BillTrackingMapper">
+
+    <select id="selectSaleTrack" resultType="java.util.Map">
+        select s.*,
+        c.bill_count,
+        c.quantity_count, c.change_quantity_count, c.change_quantity2_count from (
+        select d.*,
+        b.bill_no, b.audit_status,
+        ca.name as cat_name,
+        c.`name` as comego_name,
+        u.`name` as unit_name,
+        exs.delivery_date
+        from t_bill_detail d
+        left join t_bill b on b.id = d.bill_id
+        left join t_bill_ext_sale exs on exs.bill_id = b.id
+        left join bsd_customer c on c.id = b.comego_id
+        left join bsd_goods_sku sku on sku.id = d.sku_id
+        left join bsd_goods_cat ca on ca.id = sku.cat_id
+        left join bsd_unit u on u.id = d.unit_id
+        where b.bill_cat = 'sale_order'
+        order by b.business_time desc
+        ) s left join (
+        select b.id, count(1) as bill_count,
+        sum(d.quantity) as quantity_count,
+        sum(d.change_quantity) as change_quantity_count,
+        sum(d.change_quantity2) as change_quantity2_count
+        from t_bill_detail d
+        left join t_bill b on b.id = d.bill_id
+        where b.bill_cat = 'sale_order'
+        GROUP BY b.id
+        ) c on c.id = s.bill_id
+    </select>
+</mapper>

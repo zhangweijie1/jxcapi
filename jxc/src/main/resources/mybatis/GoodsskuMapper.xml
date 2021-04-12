@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.goods.GoodsskuMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.goods.GoodsSku">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="spu_id" jdbcType="BIGINT" property="spuId"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="unitbase" jdbcType="VARCHAR" property="unitbase"/>
+        <result column="unitvice" jdbcType="VARCHAR" property="unitvice"/>
+        <result column="specs" jdbcType="VARCHAR" property="specs"/>
+        <result column="image" jdbcType="VARCHAR" property="image"/>
+        <result column="cat_id" jdbcType="BIGINT" property="catId"/>
+        <result column="cat_name" jdbcType="VARCHAR" property="catName"/>
+        <result column="status" jdbcType="VARCHAR" property="status"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="is_default" jdbcType="VARCHAR" property="isDefault"/>
+        <result column="thumbnail" jdbcType="VARCHAR" property="thumbnail"/>
+        <result column="brand" jdbcType="VARCHAR" property="brand"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, spu_id, `name`, unitbase, unitvice, specs, barcode, good_sn, image, cat_id,
+        cat_name, status, create_time, update_time, is_default, thumbnail, brand
+    </sql>
+
+    <select id="listCustom" resultType="com.mrguo.entity.goods.GoodsSku">
+        select sku.*,
+        unit.unit_id, tu.name as unit_name, unit.multi as unit_multi,
+        price.price
+        from bsd_goods_sku sku
+        left join bsd_goods_unit unit on unit.sku_id = sku.id and unit.is_base = '1'
+        left join bsd_goods_price price on price.sku_id = unit.sku_id and price.unit_id = unit.unit_id
+        left join bsd_unit tu on tu.id = unit.unit_id
+        <where>
+            <if test='record.isShowDeact == "0"'>
+                and sku.`is_enable` = "1"
+            </if>
+            <if test="record.catId != null and record.catId != ''">
+                and sku.`cat_id` LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and(
+                sku.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or sku.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        order by sku.create_time desc
+    </select>
+
+    <select id="selectContainerStockByStore" resultType="com.mrguo.entity.goods.GoodsSku">
+        select s.*,
+        p.price as price_str,
+        u.unit_id_str, u.unit_name_str, u.unit_multi_str, u.unit_isbase_str
+        from (
+        select sku.*, cop.price_cost as cost_price,
+        sum(gs.origin_quantity) as origin_quantity,
+        sum(gs.quantity_in) as quantity_in,
+        sum(gs.quantity_out) as quantity_out,
+        sum(gs.wait_quantity_in) as wait_quantity_in,
+        sum(gs.wait_quantity_out) as wait_quantity_out,
+        sum(gs.origin_quantity + gs.quantity_in + wait_quantity_in - quantity_out - wait_quantity_out)
+        as can_use_quantity
+        from bsd_goods_sku sku
+        LEFT JOIN bsd_goods_stock gs on gs.sku_id = sku.id
+        <if test="record.storeId != null and record.storeId != ''">
+            and gs.store_id = #{record.storeId}
+        </if>
+        left join bsd_goods_costprice cop on cop.sku_id = sku.id
+        <where>
+            <if test="record.catId != null and record.catId != ''">
+                and sku.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or sku.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY sku.id
+        ) s left join (
+        select sku.id,
+        GROUP_CONCAT(u.id) as unit_id_str, GROUP_CONCAT(u.`name`) as unit_name_str,
+        GROUP_CONCAT(gu.multi) as unit_multi_str, GROUP_CONCAT(gu.is_base) as unit_isbase_str
+        from bsd_goods_sku sku
+        left join bsd_goods_unit gu on gu.sku_id = sku.id
+        left join bsd_unit u on u.id = gu.unit_id
+        <where>
+            <if test="record.catId != null and record.catId != ''">
+                and sku.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or sku.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY sku.id
+        ) u on u.id = s.id
+        left join (
+        select sku.id, gu.unit_id, p.price from bsd_goods_sku sku
+        left join bsd_goods_unit gu on gu.sku_id = sku.id and gu.is_base = '1'
+        left join bsd_goods_price p on p.unit_id = gu.unit_id and p.sku_id = gu.sku_id
+        <where>
+            <if test="record.catId != null and record.catId != ''">
+                and sku.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or sku.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        ) p on p.id = s.id
+        <if test="page.orders.size() != 0">
+            order by
+            <foreach collection="page.orders" item="item" index="index" open="" close="" separator=",">
+                ${item.column}
+                <if test="item.asc == true">asc</if>
+                <if test="item.asc != true">desc</if>
+            </foreach>
+        </if>
+    </select>
+
+
+    <select id="listDataMore" resultType="com.mrguo.entity.goods.GoodsSku">
+        select * from (
+            select s.*,
+            p.price as price_str,
+            p.unit_id, p.unit_multi,
+            u.unit_id_str, u.unit_name_str, u.unit_multi_str, u.unit_isbase_str
+            from bsd_goods_sku s
+            left join (
+            select sku.id,
+            GROUP_CONCAT(u.id) as unit_id_str, GROUP_CONCAT(u.`name`) as unit_name_str,
+            GROUP_CONCAT(gu.multi) as unit_multi_str, GROUP_CONCAT(gu.is_base) as unit_isbase_str
+            from bsd_goods_sku sku
+            left join bsd_goods_unit gu on gu.sku_id = sku.id
+            left join bsd_unit u on u.id = gu.unit_id
+            <where>
+                <if test="record.catId != null and record.catId != ''">
+                    and sku.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+                </if>
+                <if test="record.keywords != null and record.keywords != ''">
+                    and (
+                    sku.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                    or sku.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                    )
+                </if>
+            </where>
+            GROUP BY sku.id
+            ) u on u.id = s.id
+            left join (
+            select sku.id, gu.unit_id, gu.multi as unit_multi, p.price from bsd_goods_sku sku
+            left join bsd_goods_unit gu on gu.sku_id = sku.id and gu.is_base = '1'
+            left join bsd_goods_price p on p.unit_id = gu.unit_id and p.sku_id = gu.sku_id
+            <where>
+                <if test="record.catId != null and record.catId != ''">
+                    and sku.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+                </if>
+                <if test="record.keywords != null and record.keywords != ''">
+                    and (
+                    sku.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                    or sku.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                    )
+                </if>
+            </where>
+            ) p on p.id = s.id
+        ) sku
+        <where>
+            <if test="record.catId != null and record.catId != ''">
+                and sku.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or sku.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="exportExcleData" resultType="com.mrguo.entity.excle.ExcelExportSkuVo">
+        select s.id as sku_id, s.cat_name, s.`code`, s.`name`, s.specs, s.is_enable_specs, s.remarks, s.is_enable,
+        u.unit_id_str, u.unit_name_str, u.unit_multi_str, u.unit_isbase_str,
+        st.origin_quantity,
+        stw.min_qty_warning, stw.max_qty_warning,
+        cp.price_cost as origin_price
+        from bsd_goods_sku s
+        left join bsd_goods_stock st on st.sku_id = s.id and st.store_id = #{record.storeId}
+        left join bsd_goods_stock_warn stw on stw.sku_id = s.id and stw.store_id = #{record.storeId}
+        left join bsd_goods_costprice_origin cp on cp.sku_id = s.id and cp.store_id = #{record.storeId}
+        left join (
+        select sku.id,
+        GROUP_CONCAT(u.id) as unit_id_str, GROUP_CONCAT(u.`name`) as unit_name_str,
+        GROUP_CONCAT(gu.multi) as unit_multi_str, GROUP_CONCAT(gu.is_base) as unit_isbase_str
+        from bsd_goods_sku sku
+        left join bsd_goods_unit gu on gu.sku_id = sku.id
+        left join bsd_unit u on u.id = gu.unit_id
+        GROUP BY sku.id
+        ) u on u.id = s.id
+    </select>
+
+
+    <select id="selectHotSaleData" resultType="com.mrguo.entity.goods.GoodsSku">
+        select
+        s.*,
+        sa.quantity as sale_qty,
+        p.price as price_str,
+        u.unit_id_str, u.unit_name_str, u.unit_multi_str, u.unit_isbase_str
+        from (
+        select sku.*, cop.price_cost as cost_price,
+        sum(gs.origin_quantity) as origin_quantity,
+        sum(gs.quantity_in) as quantity_in,
+        sum(gs.quantity_out) as quantity_out,
+        sum(gs.wait_quantity_in) as wait_quantity_in,
+        sum(gs.wait_quantity_out) as wait_quantity_out,
+        sum(gs.origin_quantity + gs.quantity_in + wait_quantity_in - quantity_out - wait_quantity_out)
+        as can_use_quantity
+        from bsd_goods_sku sku
+        LEFT JOIN bsd_goods_stock gs on gs.sku_id = sku.id
+        <if test="record.storeId != null and record.storeId != ''">
+            and gs.store_id = #{record.storeId}
+        </if>
+        left join bsd_goods_costprice cop on cop.sku_id = sku.id
+        <where>
+            <if test="record.catId != null and record.catId != ''">
+                and sku.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or sku.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY sku.id
+        ) s left join (
+        select sku.id,
+        GROUP_CONCAT(u.id) as unit_id_str, GROUP_CONCAT(u.`name`) as unit_name_str,
+        GROUP_CONCAT(gu.multi) as unit_multi_str, GROUP_CONCAT(gu.is_base) as unit_isbase_str
+        from bsd_goods_sku sku
+        left join bsd_goods_unit gu on gu.sku_id = sku.id
+        left join bsd_unit u on u.id = gu.unit_id
+        <where>
+            <if test="record.catId != null and record.catId != ''">
+                and sku.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or sku.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY sku.id
+        ) u on u.id = s.id
+        left join (
+        select sku.id, gu.unit_id, p.price from bsd_goods_sku sku
+        left join bsd_goods_unit gu on gu.sku_id = sku.id and gu.is_base = '1'
+        left join bsd_goods_price p on p.unit_id = gu.unit_id and p.sku_id = gu.sku_id
+        <where>
+            <if test="record.catId != null and record.catId != ''">
+                and sku.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.`code` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or sku.`name` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        ) p on p.id = s.id
+        left join (
+        select d.sku_id, sum(d.quantity) as quantity from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        where b.bill_cat = 'sale'
+        GROUP BY d.sku_id
+        ) sa on sa.sku_id = s.id
+        order by sale_qty desc
+    </select>
+
+    <select id="selectPriceCostBySkus" resultType="com.mrguo.entity.goods.GoodsSku">
+        select id, price_cost from bsd_goods_sku
+        <where>
+            <foreach collection="list" item="skuId" index="index" open="(" close=")" separator="or">
+                sku_id = #{skuId}
+            </foreach>
+        </where>
+    </select>
+
+    <select id="selectAllDetailById" resultType="com.mrguo.entity.goods.GoodsSku">
+        select sku.*,
+        GROUP_CONCAT(gunit.unit_id) as unit_id, GROUP_CONCAT(unit.name) as unit_name, GROUP_CONCAT(gunit.multi) as unit_multi, GROUP_CONCAT(gunit.is_base) as is_base_unit,
+        GROUP_CONCAT(price.unit_id) as price_unit_id, GROUP_CONCAT(price.price) as price,
+        GROUP_CONCAT(bcode.barcode) as barcode
+        from bsd_goods_sku sku
+        left join bsd_goods_unit gunit on gunit.sku_id = sku.id
+        left join bsd_goods_price price on price.sku_id = gunit.sku_id and price.unit_id = gunit.unit_id
+        left join bsd_goods_barcode bcode on bcode.sku_id = sku.id and bcode.unit_id = gunit.unit_id
+        left join bsd_unit unit on unit.id = gunit.unit_id
+        where sku.id = #{skuId}
+    </select>
+
+    <select id="selectByBarcode" resultType="com.mrguo.entity.goods.GoodsSku">
+        select s.*,
+        u.unit_id_str,
+        u.unit_name_str,
+        u.unit_multi_str,
+        u.unit_isbase_str
+        from (
+        select s.id, s.`code`, s.`name`, bgb.unit_id, p.price as price_str,
+        (
+        select sum(origin_quantity + quantity_in - quantity_out + wait_quantity_in - wait_quantity_out)
+        from bsd_goods_stock where sku_id = s.id GROUP BY s.id
+        ) as quantity
+        from bsd_goods_barcode bgb
+        inner join bsd_goods_sku s on s.id = bgb.sku_id and bgb.barcode = #{barcode}
+        left join bsd_goods_price p on p.sku_id = bgb.sku_id and p.unit_id = bgb.unit_id
+        ) s
+        left join (
+        select s.id,
+        GROUP_CONCAT(gu.unit_id) as unit_id_str,
+        GROUP_CONCAT(u.`name`) as unit_name_str,
+        GROUP_CONCAT(gu.multi) as unit_multi_str,
+        GROUP_CONCAT(gu.is_base) as unit_isbase_str
+        from bsd_goods_sku s
+        left join bsd_goods_unit gu on gu.sku_id = s.id
+        left join bsd_unit u on u.id = gu.unit_id
+        GROUP BY s.id
+        ) u on u.id = s.id
+    </select>
+
+    <select id="selectAllStockBySkuId" resultType="com.mrguo.dto.goods.SkuInfoDto">
+        select
+        bs.name as store_name,
+        st.sku_id, st.store_id,
+        ifnull(st.origin_quantity,0) as origin_quantity,
+        ifnull(st.wait_quantity_in,0) as wait_quantity_in,
+        ifnull(st.wait_quantity_out,0) as wait_quantity_out,
+        ifnull(st.quantity_in,0) as quantity_in,
+        ifnull(st.quantity_out,0) as quantity_out,
+        ifnull(sw.min_qty_warning,0) as min_qty_warning,
+        ifnull(sw.max_qty_warning,0) as max_qty_warning,
+        ifnull(cp.price_cost,0) as origin_cost_price
+        from bsd_store bs
+        left join bsd_goods_stock st on st.store_id = bs.id and st.sku_id = #{skuId}
+        left join bsd_goods_stock_warn sw on sw.store_id = st.store_id and sw.sku_id = #{skuId}
+        left join bsd_goods_costprice_origin cp on cp.store_id = st.store_id and cp.sku_id = #{skuId}
+    </select>
+
+    <select id="selectCodesByCodeList" resultType="java.lang.String">
+        select code from bsd_goods_sku
+        <if test="list.size() > 0">
+            where
+            <foreach collection="list" item="code" open="" close="" separator="or">
+                code = #{code}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="selectIdCodeListByCodeList" resultType="com.mrguo.entity.goods.GoodsSku">
+        select id, code from bsd_goods_sku
+        <if test="list.size() > 0">
+            where
+            <foreach collection="list" item="code" open="" close="" separator="or">
+                code = #{code}
+            </foreach>
+        </if>
+    </select>
+
+    <update id="updatePriceCostBySkus" parameterType="com.mrguo.entity.goods.GoodsSku">
+        update bsd_goods_stock
+        <trim prefix="set" suffixOverrides=",">
+            <trim prefix="price_cost = case" suffix="end,">
+                <foreach collection="list" item="item" index="index">
+                    when id = #{item.id} then #{item.priceCost}
+                </foreach>
+            </trim>
+        </trim>
+        where id in
+        <foreach collection="list" index="index" item="item" separator="," open="(" close=")">
+            #{item.id}
+        </foreach>
+    </update>
+</mapper>

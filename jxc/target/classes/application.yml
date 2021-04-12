@@ -1,0 +1,76 @@
+server:
+  servlet:
+    context-path: /api
+  port: 8000
+
+
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://47.100.176.159:3306/jxc_professional?characterEncoding=utf8
+    username: root
+    password: ymlc###888
+  #@ResponseBody转换JSON 时 Date 类型处理方法
+  jackson:
+    date-format: yyyy-MM-dd hh:mm:ss
+    time-zone: GMT+8
+  #redis
+  redis:
+    database: 2
+    host: 106.14.28.234
+    port: 6379
+    timeout: 10000
+    password: wlcl2020#
+    block-when-exhausted: true
+    jedis:
+      pool:
+        max-active: 1024
+        max-wait: 10000
+        max-idle: 200
+        min-idle: 0
+
+# mybatis 实体位置
+mybatis:
+  typeAliasesPackage: com.mrguo.entity
+  mapperLocations: classpath:mybatis/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+mybatis-plus:
+  # 扫描mapper.xml文件
+  mapper-locations: classpath:mybatis/*.xml
+  # 扫描实体类
+  typeAliasesPackage: com.mrguo.entity
+  # 主键类型
+  global-config:
+    #0:"数据库ID自增", 1:"用户输入ID",2:"全局唯一ID (数字类型唯一ID)", 3:"全局唯一ID UUID";
+    id-type: 0
+    #字段策略 0:"忽略判断",1:"非 NULL 判断"),2:"非空判断"
+    field-strategy: 0
+    #驼峰下划线转换
+    db-column-underline: true
+    #刷新mapper 调试神器
+    refresh-mapper: true
+    #数据库大写下划线转换
+    #capital-mode: true
+  #自定义SQL注入器
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+
+mapper:
+  mappers: com.mrguo.common.dao.MyMapper
+  not-empty: false
+  style: normal
+
+business:
+  digit: 4 #单据前缀位数
+  redis-prefix: #redis前缀
+    permission: "PERMISSION"
+    userInfo: "USER_INFO"
+
+
+#金额配置
+amount:
+  digit: 4

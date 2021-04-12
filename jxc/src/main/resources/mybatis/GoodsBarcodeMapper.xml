@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.goods.GoodsBarcodeMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.goods.GoodsBarcode">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="sku_id" jdbcType="BIGINT" property="skuId"/>
+        <id column="unit_id" jdbcType="BIGINT" property="unitId"/>
+        <id column="barcode" jdbcType="VARCHAR" property="barcode"/>
+    </resultMap>
+
+    <select id="selectBarcodeListByCodes" resultType="java.lang.String">
+        select barcode from bsd_goods_barcode
+        <where>
+            <if test="list.size() != 0">
+            barcode in
+                <foreach collection="list" item="barcode" index="index" open="(" close=")" separator=",">
+                    #{barcode}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="selectBarcodeListBySkuId" resultType="java.lang.String">
+        select barcode from bsd_goods_barcode
+        <where>
+            sku_id = #{skuId}
+        </where>
+    </select>
+
+    <delete id="delDataBySkuIds">
+        delete from bsd_goods_barcode
+        <if test="list.size() > 0">
+            where sku_id in
+            <foreach collection="list" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+</mapper>

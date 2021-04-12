@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.setup.OriginMapper">
+
+    <select id="listStock" resultType="com.mrguo.dto.setup.Origin">
+        SELECT b.*, u.unit_name from (
+        select s.id, s.code, s.name,
+        sum(gs.origin_quantity) as origin_quantity,
+        sum(gs.origin_quantity * o.price_cost) as origin_cost_price_total
+        from bsd_goods_sku s
+        inner join bsd_goods_stock gs on gs.sku_id = s.id
+        inner join bsd_goods_costprice_origin o on o.store_id = gs.store_id and o.sku_id = gs.sku_id
+        <where>
+            <if test="record.storeId != null and record.storeId != ''">
+                and gs.store_id = #{record.storeId}
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                s.code LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or s.name LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY s.id
+        ) b
+        inner join (
+        select s.id, u.name as unit_name
+        from bsd_goods_sku s
+        inner join bsd_goods_unit gu on gu.sku_id = s.id
+        inner join bsd_unit u on u.id = gu.unit_id
+        <where>
+            gu.is_base = '1'
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                s.code LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or s.name LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        ) u on u.id = b.id
+    </select>
+
+
+    <select id="listDeptRece" resultType="com.mrguo.entity.bsd.Customer">
+        select b.* from bsd_customer b
+        <where>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.code LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.name LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.contacter LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.phone LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="listDeptPay" resultType="com.mrguo.entity.bsd.Supplier">
+        select b.* from bsd_supplier b
+        <where>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.code LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.name LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.contacter LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.phone LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="listAccountOrigin" resultType="com.mrguo.entity.bsd.Account">
+        select b.* from bsd_account b
+        <where>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.name LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.bank_name LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+    </select>
+</mapper>

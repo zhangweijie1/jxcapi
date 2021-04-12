@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.fin.FinBillMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.fin.FinBill">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="bill_no" jdbcType="VARCHAR" property="billNo"/>
+        <result column="bill_cat" jdbcType="BIGINT" property="billCat"/>
+        <result column="comego_id" jdbcType="BIGINT" property="comegoId"/>
+        <result column="account_id" jdbcType="BIGINT" property="accountId"/>
+        <result column="direction" jdbcType="VARCHAR" property="direction"/>
+        <result column="amount_payable" jdbcType="DECIMAL" property="amountPayable"/>
+        <result column="amount_paid" jdbcType="DECIMAL" property="amountPaid"/>
+        <result column="amount_discount" jdbcType="DECIMAL" property="amountDiscount"/>
+        <result column="amount_rece" jdbcType="DECIMAL" property="amountRece"/>
+        <result column="amount_total" jdbcType="DECIMAL" property="amountTotal"/>
+        <result column="remarks" jdbcType="VARCHAR" property="remarks"/>
+        <result column="hand_user_id" jdbcType="BIGINT" property="handUserId"/>
+        <result column="business_time" jdbcType="TIMESTAMP" property="bussinessTime"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, bill_no, bill_cat, comego_id, account_id, direction, amount_payable,
+        amount_paid, amount_discount, amount_rece, amount_total, remarks, hand_user_id,
+        business_time, create_time, update_time
+    </sql>
+
+    <select id="listCustom" resultType="com.mrguo.entity.fin.FinBill">
+        select
+        fb.id, fb.business_time, fb.bill_no,
+        fb.amount_payable, fb.amount_paid,
+        fb.is_cancle, fb.remarks,
+        tc.name as customer_name, ts.name as supplier_name, fcc.name as capital_cat_name,
+        ta.name as account_name
+        from fin_bill fb
+        left join bsd_customer tc on tc.id = fb.comego_id
+        left join bsd_supplier ts on ts.id = fb.comego_id
+        left join fin_capital_cat fcc on fcc.id = fb.capital_cat
+        left join bsd_account ta on ta.id = fb.account_id
+        <where>
+            <if test="record.billCat != null and record.billCat != ''">
+                and fb.bill_cat = #{record.billCat}
+            </if>
+            <if test="record.isCancle == '0'.toString()">
+                and fb.is_cancle = #{record.isCancle}
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                fb.bill_no LIKE CONCAT('%', #{record.keywords}, '%')
+                or
+                fb.remarks LIKE CONCAT('%', #{record.keywords}, '%')
+                )
+            </if>
+        </where>
+    </select>
+
+
+    <select id="selectDebtReceiptGroup" resultType="com.mrguo.entity.fin.FinBill">
+        select sum(amount_debt) as amount_debt, sum(amount_discount) as amount_discount, sum(amount_rece) as amount_rece,
+        tc.id as comego_id, tc.code as comego_code, tc.name as comego_name, tc.contacter, tc.phone, tc.amount_payable as origin_amount
+        from (
+        select comego_id, amount_debt, amount_discount, 0 as amount_rece from t_bill
+        where bill_cat in ('sale','sale_return')
+        UNION ALL
+        select comego_id, 0 as amount_debt, amount_discount, amount_rece from fin_bill
+        where bill_cat in ('fin_comego_in')
+        ) as result
+        left join t_customer tc on tc.id = result.comego_id
+        GROUP BY result.comego_id
+    </select>
+
+    <select id="selectDebtReceiptDetailByMaster" resultType="com.mrguo.entity.fin.FinBill">
+      select * from fin_bill fb
+      group by fb.comego_id
+    </select>
+
+    <select id="selectDailyInList" resultType="com.mrguo.entity.fin.FinBill">
+      select * from fin_bill fb
+      where bill_cat = 'fin_dayily_in'
+    </select>
+
+    <select id="selectDailyOutList" resultType="com.mrguo.entity.fin.FinBill">
+      select * from fin_bill fb
+      where bill_cat = 'fin_dayily_out'
+    </select>
+</mapper>

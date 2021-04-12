@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bill.BillExtSaleMapper">
+
+  <select id="selectDataById" resultType="com.mrguo.entity.bill.BillExtSale">
+    select *, if(type='0','销售','批发') as type_name
+    from t_bill_ext_sale
+    where bill_id = #{billId}
+  </select>
+</mapper>

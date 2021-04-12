@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bill.BillDispatchMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.bill.BillDispatch">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="bill_no" jdbcType="VARCHAR" property="billNo"/>
+        <result column="bill_master_id" jdbcType="BIGINT" property="billMasterId"/>
+        <result column="store_id" jdbcType="BIGINT" property="storeId"/>
+        <result column="direction" jdbcType="VARCHAR" property="direction"/>
+        <result column="amount_payable" jdbcType="DECIMAL" property="amountPayable"/>
+        <result column="amount_paid" jdbcType="DECIMAL" property="amountPaid"/>
+        <result column="amount_debt" jdbcType="DECIMAL" property="amountDebt"/>
+        <result column="amount_deb_total" jdbcType="DECIMAL" property="amountDebTotal"/>
+        <result column="amount_other" jdbcType="DECIMAL" property="amountOther"/>
+        <result column="amount_discount" jdbcType="DECIMAL" property="amountDiscount"/>
+        <result column="account_id" jdbcType="BIGINT" property="accountId"/>
+        <result column="change_quantity" jdbcType="DECIMAL" property="changeQuantity"/>
+        <result column="return_quantity" jdbcType="DECIMAL" property="returnQuantity"/>
+        <result column="goods_namestr" jdbcType="VARCHAR" property="goodsNamestr"/>
+        <result column="hand_user_id" jdbcType="BIGINT" property="handUserId"/>
+        <result column="create_user_id" jdbcType="BIGINT" property="createUserId"/>
+        <result column="update_user_id" jdbcType="BIGINT" property="updateUserId"/>
+        <result column="comego_id" jdbcType="BIGINT" property="comegoId"/>
+        <result column="comego_name" jdbcType="VARCHAR" property="comegoName"/>
+        <result column="remarks" jdbcType="VARCHAR" property="remarks"/>
+        <result column="audit_status" jdbcType="VARCHAR" property="auditStatus"/>
+        <result column="audit_user_id" jdbcType="BIGINT" property="auditUserId"/>
+        <result column="business_time" jdbcType="TIMESTAMP" property="businessTime"/>
+        <result column="is_cancle" jdbcType="VARCHAR" property="isCancle"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, bill_no, bill_master_id, store_id, direction, amount_payable, amount_paid,
+        amount_debt, amount_deb_total, amount_other, amount_discount, account_id, change_quantity,
+        return_quantity, goods_namestr, hand_user_id, create_user_id, update_user_id, comego_id,
+        comego_name, remarks, audit_status, audit_user_id, business_time, is_cancle, create_time,
+        update_time
+    </sql>
+
+
+    <select id="selectList" resultType="com.mrguo.vo.bill.BillDiapatchVo">
+        select * from (
+            select b.*,
+            dis.store_id_out, stout.`name` as store_name_out,
+            dis.store_id_in, stin.`name` as store_name_in,
+            ifnull(sum(d.quantity),0) as quantity,
+            ifnull(sum(dd.change_quantity_out),0) as change_quantity_out,
+            ifnull(sum(dd.change_quantity_in),0) as change_quantity_in
+            from t_bill b
+            left join t_bill_ext_dispatch dis on dis.id = b.id
+            left join t_bill_detail d on d.bill_id = b.id
+            left join t_bill_detail_ext_dispatch dd on dd.id = d.id
+            left join bsd_store stout on stout.id = dis.store_id_out
+            left join bsd_store stin on stin.id = dis.store_id_in
+            <where>
+                and b.bill_cat = 'dispatch'
+                <if test="record.isCancle == '0'.toString()">
+                    and b.is_cancle = #{record.isCancle}
+                </if>
+                <if test="record.storeIdOut != null and record.storeIdOut != ''">
+                    and dis.store_id_out = #{record.storeIdOut}
+                </if>
+                <if test="record.storeIdIn != null and record.storeIdIn != ''">
+                    and dis.store_id_in = #{record.storeIdIn}
+                </if>
+                <if test="record.keywords  != null and record.keywords != ''">
+                    and (
+                    b.bill_no like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                    or d.name like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                    or d.remarks like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                    )
+                </if>
+            </where>
+            GROUP BY b.id
+            ORDER BY b.business_time desc
+        ) a
+        <where>
+            1 = 1
+            <if test="record.stockOutStatus == '0'.toString()">
+                and change_quantity_out = 0
+            </if>
+            <if test="record.stockOutStatus == '1'.toString()">
+                and change_quantity_out > 0  and change_quantity_out <![CDATA[<]]> quantity
+            </if>
+            <if test="record.stockOutStatus == '2'.toString()">
+                and change_quantity_out = quantity
+            </if>
+            <if test="record.stockInStatus == '0'.toString()">
+                and change_quantity_in = 0
+            </if>
+            <if test="record.stockInStatus == '1'.toString()">
+                and change_quantity_in > 0  and change_quantity_in <![CDATA[<]]> quantity
+            </if>
+            <if test="record.stockInStatus == '2'.toString()">
+                and change_quantity_in = quantity
+            </if>
+        </where>
+    </select>
+
+    <select id="selectBillByBillId" resultType="com.mrguo.vo.bill.BillDiapatchVo">
+        select b.*,
+        d.store_id_out, d.store_id_in,
+        stout.`name` as store_name_out, stin.`name` as store_name_in,
+        sm.real_name as hand_user_name
+        from t_bill b
+        left join t_bill_ext_dispatch d on d.id = b.id
+        left join bsd_store stout on stout.id = d.store_id_out
+        left join bsd_store stin on stin.id = d.store_id_in
+        left join sys_employee sm on sm.id = b.hand_user_id
+        where b.id = #{billId}
+    </select>
+
+    <select id="selectDispatchInByMasterId" resultType="com.mrguo.entity.bill.BillDispatch">
+        select * from t_bill_dispatch
+        where direction = '1' and bill_master_id = #{masterId}
+    </select>
+</mapper>

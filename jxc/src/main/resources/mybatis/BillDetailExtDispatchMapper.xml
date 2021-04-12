@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bill.BillDetailExtDispatchMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.bill.BillDetailExtDispatch">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="change_quantity_out" jdbcType="DECIMAL" property="changeQuantityOut"/>
+        <result column="change_quantity_in" jdbcType="DECIMAL" property="changeQuantityIn"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, change_quantity_out, change_quantity_in
+    </sql>
+
+    <select id="selectListByMasterId" resultType="com.mrguo.entity.bill.BillDetailExtDispatch">
+        select * from t_bill_detail_ext_dispatch d
+        where d.bill_id = #{billId}
+    </select>
+
+    <select id="selectListOutByMasterId" resultType="com.mrguo.vo.bill.BillDetailDispatchVo">
+        select d.sku_id, d.id, d.code, d.name, d.quantity, d.price, d.remarks,
+        u.id as unit_id, u.name as unit_name, d.unit_multi,
+        dd.change_quantity_out as change_quantity
+        from t_bill_detail d
+        left join t_bill_detail_ext_dispatch dd on dd.id = d.id
+        left join bsd_unit u on u.id = d.unit_id
+        where d.bill_id = #{billId}
+    </select>
+
+    <select id="selectListInByMasterId" resultType="com.mrguo.vo.bill.BillDetailDispatchVo">
+        select d.sku_id, d.id, d.code, d.name, d.quantity, d.price, d.remarks,
+        u.id as unit_id, u.name as unit_name, d.unit_multi,
+        dd.change_quantity_in as change_quantity
+        from t_bill_detail d
+        left join t_bill_detail_ext_dispatch dd on dd.id = d.id
+        left join bsd_unit u on u.id = d.unit_id
+        where d.bill_id = #{billId}
+    </select>
+</mapper>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.mrguo.dao.sys.SysRolePermissionMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.sys.SysRolePermission">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <result column="role_id" property="roleId" jdbcType="VARCHAR"/>
+        <result column="permission_id" property="permissionId" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="selectListByRoleIds" resultType="com.mrguo.entity.sys.SysRolePermission">
+      select * from sys_role_permission
+      where role_id in
+      <foreach collection="list" item="roleId" open="(" close=")" separator=",">
+          #{roleId}
+      </foreach>
+    </select>
+</mapper>

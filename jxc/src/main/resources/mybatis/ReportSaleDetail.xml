@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.report.SaleDetailReportMapper">
+
+    <select id="listSaleDetail" resultType="com.mrguo.dto.report.SaleDetailReportDto">
+      select b.id as bill_id, b.direction, b.bill_cat_name, b.business_time,
+      b.amount_payable, b.amount_discount, b.bill_no, bse.delivery_date,
+      sku.code as sku_code, sku.name as sku_name,
+      store.name as store_name,
+      cus.code as comego_code, cus.name as comego_name,
+      ui.name as unit_name,
+      cusc.name as comego_cat_name,
+      gcat.name as sku_cat_name,
+      bar.barcode,
+      d.quantity, d.unit_multi, d.price, lgc.price_cost,
+      d.remarks
+      from t_bill_detail d
+      left join t_bill b on b.id = d.bill_id
+      left join t_bill_ext_sale bse on bse.bill_id = b.id
+      left join bsd_goods_sku sku on sku.id = d.sku_id
+      left join bsd_store store on store.id = b.store_id
+      left join bsd_customer cus on cus.id = b.comego_id
+      left join bsd_unit ui on ui.id = d.unit_id
+      left join log_goods_costprice lgc on lgc.bill_id = b.id and lgc.sku_id = d.sku_id
+      left join bsd_customer_cat cusc on cusc.id = cus.cat_id
+      left join bsd_goods_cat gcat on gcat.id = sku.cat_id
+      left join bsd_goods_barcode bar on bar.sku_id = d.sku_id and bar.unit_id = d.unit_id
+      <where>
+        b.bill_cat in ('sale','sale_return')
+        <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+          and b.business_time between #{record.beginTime} and #{record.endTime}
+        </if>
+      </where>
+    </select>
+
+</mapper>

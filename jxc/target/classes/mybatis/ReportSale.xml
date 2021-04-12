@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.report.SaleReportMapper">
+
+    <select id="listDataGroupByGoodPage" resultType="com.mrguo.dto.report.SaleReportDto">
+        select sku.id as sku_id, sku.`code`, sku.`name`,
+        bu.`name` as unit_name,
+        cp.price_cost,
+        ifnull(q.qty_in_base,0) as qty_in_base,
+        ifnull(q.return_qty_in_base,0) as return_qty_in_base,
+        ifnull(q.bill_count,0) as bill_count,
+        ifnull(q.return_bill_count,0) as return_bill_count,
+        ifnull(q.amount_payable,0) as amount_payable,
+        ifnull(q.return_amount_payable,0) as return_amount_payable,
+        ifnull(q.amount_discount,0) as amount_discount
+        from bsd_goods_sku sku
+        left join bsd_goods_costprice cp on cp.sku_id = sku.id
+        left join bsd_goods_unit u on u.sku_id = sku.id and u.is_base = '1'
+        left join bsd_unit bu on bu.id = u.unit_id
+        left join (
+        select sku.id,
+        sum(if(b.bill_cat = 'sale',d.quantity * d.unit_multi,0)) as qty_in_base,
+        sum(if(b.bill_cat = 'sale_return',d.quantity * d.unit_multi,0)) as return_qty_in_base,
+        count(DISTINCT case when b.bill_cat = 'sale' then b.id end) as bill_count,
+        count(DISTINCT case when b.bill_cat = 'sale_return' then b.id end) as return_bill_count,
+        sum(if(b.bill_cat = 'sale',b.amount_payable,0)) as amount_payable,
+        sum(if(b.bill_cat = 'sale_return',b.amount_payable,0)) as return_amount_payable,
+        sum(if(b.bill_cat = 'sale',b.amount_discount,0)) as amount_discount
+        from bsd_goods_sku sku
+        left join t_bill_detail d on d.sku_id = sku.id
+        left join t_bill b on b.id = d.bill_id
+        <where>
+            b.bill_cat in ('sale','sale_return') and b.is_cancle = '0'
+            <if test="record.catId != null and record.catId != ''">
+                and sku.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.name like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or
+                sku.code like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY sku.id
+        ) q on q.id = sku.id
+        <where>
+            1=1
+            <if test="record.catId != null and record.catId != ''">
+                and sku.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.name like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or
+                sku.code like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="listDataGroupByComegoPage" resultType="com.mrguo.dto.report.SaleReportDto">
+        select
+        c.id as comego_id, c.`code`, c.`name`,
+        bcc.name AS comego_cat_name,
+        ifnull(m.qty_in_base,0) as qty_in_base,
+        ifnull(m.return_qty_in_base,0) as return_qty_in_base,
+        ifnull(m.bill_count,0) as bill_count,
+        ifnull(m.return_bill_count,0) as return_bill_count,
+        ifnull(m.amount_payable,0) as amount_payable,
+        ifnull(m.return_amount_payable,0) as return_amount_payable,
+        ifnull(m.amount_discount,0) as amount_discount,
+        ifnull(m.price_cost_total,0) as price_cost_total
+        from bsd_customer c
+        left join bsd_customer_cat bcc ON bcc.id = c.cat_id
+        left join (
+        select bc.id,
+        sum(if(b.bill_cat = 'sale', d.quantity * d.unit_multi, 0)) AS qty_in_base,
+        sum(if(b.bill_cat = 'sale_return', d.quantity * d.unit_multi, 0)) AS return_qty_in_base,
+        count(DISTINCT CASE WHEN b.bill_cat = 'sale' THEN b.id END) AS bill_count,
+        count(DISTINCT CASE WHEN b.bill_cat = 'sale_return' THEN b.id END) AS return_bill_count,
+        sum(if(b.bill_cat = 'sale', b.amount_payable, 0)) AS amount_payable,
+        sum(if(b.bill_cat = 'sale_return', b.amount_payable, 0)) AS return_amount_payable,
+        sum(if(b.bill_cat = 'sale', b.amount_discount, 0)) AS amount_discount,
+        sum(lgc.price_cost * d.quantity * d.unit_multi) AS price_cost_total
+        from bsd_customer bc
+        left join bsd_customer_cat bcc ON bcc.id = bc.cat_id
+        left join t_bill b on b.comego_id = bc.id
+        left join t_bill_detail d on d.bill_id = d.id
+        left join log_goods_costprice lgc ON lgc.sku_id = d.sku_id AND lgc.bill_id = d.bill_id
+        <where>
+            b.bill_cat in ('sale','sale_return') and b.is_cancle = '0'
+            <if test="record.catId != null and record.catId != ''">
+                and bc.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        GROUP BY bc.id
+        ) m on m.id = c.id
+        <where>
+            <if test="record.catId != null and record.catId != ''">
+                and c.cat_id LIKE concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+        </where>
+    </select>
+
+    <select id="listDataGroupByBillPage" resultType="com.mrguo.dto.report.SaleReportDto">
+        select DATE_FORMAT(b.business_time,'%Y-%m-%d') as time,
+        count(DISTINCT case when b.bill_cat = 'sale' then b.id end) as bill_count,
+        sum(if(b.bill_cat = 'sale',d.price * d.quantity,0)) as amount_payable,
+        sum(if(b.bill_cat = 'sale',b.amount_discount,0)) as amount_discount,
+        count(DISTINCT case when b.bill_cat = 'sale_return' then b.id end) as return_bill_count,
+        sum(if(b.bill_cat = 'sale_return',d.price * d.quantity,0)) as return_amount_payable,
+        sum(if(b.bill_cat = 'sale',b.amount_other,0)) as amount_other,
+        sum(if(b.bill_cat = 'sale_return',b.amount_other,0)) as return_amount_other,
+        sum(lgc.price_cost * d.quantity * d.unit_multi) as price_cost_total
+        from t_bill_detail d
+        left join t_bill b on b.id = d.bill_id
+        left join log_goods_costprice lgc on lgc.sku_id = d.sku_id and lgc.bill_id = d.bill_id
+        <where>
+            b.bill_cat in ('sale','sale_return') and b.is_cancle = '0'
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        GROUP BY time
+        ORDER BY time desc
+    </select>
+
+
+    <select id="listGoodDetailBySkuIdGroupByBillPage" resultType="com.mrguo.dto.report.SaleReportDto">
+        select b.business_time, b.direction, b.bill_no, b.amount_discount, b.amount_payable,
+        cus.name as comego_name,
+        (
+        select bu.`name` as unit_name from bsd_goods_unit u
+        left join bsd_unit bu on bu.id = u.unit_id
+        where u.sku_id = #{record.skuId} and u.is_base = '1'
+        ) as unit_name,
+        sum(d.quantity * d.unit_multi) as quantity,
+        sae.type as sale_type
+        from t_bill_detail d
+        left join t_bill b on b.id = d.bill_id
+        left join t_bill_ext_sale sae on sae.bill_id = b.id
+        left join bsd_customer cus on cus.id = b.comego_id
+        <where>
+            d.sku_id = #{record.skuId}
+            and b.bill_cat in ('sale','sale_return') and b.is_cancle = "0"
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.bill_no like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or
+                comego_name like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY b.id
+    </select>
+
+    <select id="listGoodDetailBySkuIdGroupByComegoPage" resultType="com.mrguo.dto.report.SaleReportDto">
+        select cus.name as comego_name,
+        sum(d.quantity * d.unit_multi) as quantity,
+        (
+        select bu.`name` as unit_name from bsd_goods_unit u
+        left join bsd_unit bu on bu.id = u.unit_id
+        where u.sku_id = #{record.skuId} and u.is_base = '1'
+        ) as unit_name,
+        sum(b.amount_discount) as amount_discount,
+        sum(b.amount_payable) as amount_payable,
+        sum(d.quantity * d.unit_multi * cp.price_cost) as price_cost_total
+        from bsd_customer cus
+        left join t_bill b on b.comego_id = cus.id and b.bill_cat = 'sale' and b.is_cancle = "0"
+        left join t_bill_detail d on d.bill_id = b.id and d.sku_id = #{record.skuId}
+        left join log_goods_costprice cp on cp.sku_id = #{record.skuId} and cp.bill_id = b.id
+        <where>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                cus.name like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY cus.id
+    </select>
+
+    <select id="listComegoDetailByComegoIdGroupByGoodPage" resultType="com.mrguo.dto.report.SaleReportDto">
+        select sku.code, sku.name,
+        bu.name as unit_name,
+        sum(d.quantity * d.unit_multi) as quantity,
+        b.amount_discount, b.amount_payable,
+        sum(d.quantity * d.unit_multi * cp.price_cost) as price_cost_total
+        from t_bill_detail d
+        left join t_bill b on b.id = d.bill_id
+        left join bsd_goods_sku sku on sku.id = d.sku_id
+        left join bsd_goods_unit u on u.sku_id = sku.id and u.is_base = '1'
+        left join bsd_unit bu on bu.id = u.unit_id
+        left join log_goods_costprice cp on cp.sku_id = d.sku_id and cp.bill_id = b.id
+        <where>
+            b.comego_id = #{record.comegoId} and b.bill_cat = 'sale' and b.is_cancle = "0"
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.name like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or
+                b.bill_no like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY sku.id
+    </select>
+
+    <select id="listComegoDetailByComegoIdGroupByBillPage" resultType="com.mrguo.dto.report.SaleReportDto">
+        select b.business_time, b.direction, b.bill_no, b.goods_namestr as name,
+        b.amount_discount, b.amount_payable,
+        sum(d.quantity * d.unit_multi) as quantity,
+        sum(d.quantity * d.unit_multi * cp.price_cost) as price_cost_total
+        from t_bill_detail d
+        left join t_bill b on b.id = d.bill_id
+        left join bsd_goods_sku sku on sku.id = d.sku_id
+        left join bsd_customer cus on cus.id = b.comego_id
+        left join log_goods_costprice cp on cp.sku_id = d.sku_id and cp.bill_id = b.id
+        <where>
+            b.comego_id = #{record.comegoId}
+            and b.bill_cat in ('sale','sale_return') and b.is_cancle = "0"
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.name like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or
+                b.bill_no like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY b.id
+    </select>
+
+    <select id="detailBill" resultType="com.mrguo.dto.report.SaleReportDto">
+        select b.bill_no, cus.name as comego_name,
+        b.amount_payable, b.amount_other,
+        sum(d.quantity * d.unit_multi * cp.price_cost) as price_cost_total
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        left join log_goods_costprice cp on cp.sku_id = d.sku_id and cp.bill_id = b.id
+        left join bsd_customer cus on cus.id = b.comego_id
+        <where>
+            b.bill_cat = "sale" and b.is_cancle = "0"
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                comego_name like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or
+                b.bill_no like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY b.id
+    </select>
+
+    <select id="listBillDetailByDate" resultType="com.mrguo.dto.report.SaleReportDto">
+        select b.bill_no, b.direction, cus.name as comego_name,
+        b.amount_payable, b.amount_discount, b.amount_other,
+        sum(d.quantity * d.unit_multi * cp.price_cost) as price_cost_total
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        left join log_goods_costprice cp on cp.sku_id = d.sku_id and cp.bill_id = b.id
+        left join bsd_customer cus on cus.id = b.comego_id
+        <where>
+            b.bill_cat in ("sale","sale_return") and b.is_cancle = "0"
+            and DATE_FORMAT(b.business_time,'%Y-%m-%d') = DATE_FORMAT(#{record.time}, '%Y-%m-%d')
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                comego_name like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or
+                b.bill_no like concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        GROUP BY b.id
+    </select>
+
+    <select id="selectSalesInfo" resultType="com.mrguo.dto.report.SaleInfoReportDto">
+        select count(1) as bill_count,
+        ifnull(sum(b.amount_payable),0) as amount_payable,
+        ifnull(
+        (select sum(loggc.price_cost * d.quantity * d.unit_multi) from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        left join log_goods_costprice loggc on loggc.bill_id = b.id and loggc.sku_id = d.sku_id
+        <where>
+            b.is_cancle = "0" and b.bill_cat = "sale"
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        )
+        ,0)
+        as price_cost_total
+        from t_bill b
+        <where>
+            b.is_cancle = "0" and b.bill_cat = "sale"
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectMaxSaleAmountGood" resultType="com.mrguo.entity.goods.GoodsSku">
+        select d.sku_id, sku.name, sum(d.price * d.quantity * d.unit_multi) as amount from t_bill_detail d
+        left join t_bill b on b.id = d.bill_id
+        left join bsd_goods_sku sku on sku.id = d.sku_id
+        <where>
+            b.is_cancle = "0" and b.bill_cat = "sale"
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        group by d.sku_id
+        order by amount desc limit 1
+    </select>
+
+    <select id="selectMaxSaleAmountCustomer" resultType="com.mrguo.entity.bsd.Customer">
+        select bc.id, bc.name, sum(d.price * d.quantity * d.unit_multi) as amount from t_bill_detail d
+        left join t_bill b on b.id = d.bill_id
+        left join bsd_customer bc on bc.id = b.comego_id
+        <where>
+            b.is_cancle = "0" and b.bill_cat = "sale"
+            <if test="record.storeId != null and record.storeId != ''">
+                and b.store_id = #{record.storeId}
+            </if>
+            <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+                and b.business_time between #{record.beginTime} and #{record.endTime}
+            </if>
+        </where>
+        group by bc.id
+        order by amount desc limit 1
+    </select>
+</mapper>

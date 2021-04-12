@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bsd.CustomerMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.bsd.Customer">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="cat" jdbcType="BIGINT" property="cat"/>
+        <result column="contacter" jdbcType="VARCHAR" property="contacter"/>
+        <result column="phone" jdbcType="VARCHAR" property="phone"/>
+        <result column="address" jdbcType="VARCHAR" property="address"/>
+        <result column="amount_payable" jdbcType="DECIMAL" property="amountPayable"/>
+        <result column="employee_id" jdbcType="BIGINT" property="employeeId"/>
+        <result column="wechat" jdbcType="VARCHAR" property="wechat"/>
+        <result column="qq" jdbcType="VARCHAR" property="qq"/>
+        <result column="company_tel" jdbcType="VARCHAR" property="companyTel"/>
+        <result column="tax" jdbcType="VARCHAR" property="tax"/>
+        <result column="email" jdbcType="VARCHAR" property="email"/>
+        <result column="postal" jdbcType="VARCHAR" property="postal"/>
+        <result column="relation_id" jdbcType="BIGINT" property="relationId"/>
+        <result column="is_public" jdbcType="VARCHAR" property="isPublic"/>
+        <result column="is_default" jdbcType="VARCHAR" property="isDefault"/>
+        <result column="remarks" jdbcType="VARCHAR" property="remarks"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, code, name, cat, contacter, phone, address, amount_payable, employee_id, wechat,
+        qq, company_tel, tax, email, postal, relation_id, is_public, is_default, remarks,
+        create_time, update_time
+    </sql>
+
+    <select id="findById" resultType="com.mrguo.entity.bsd.Customer">
+            select c.*,
+            ca.name as cat_name, e.real_name as employee_name, l.name as level_name,
+            s.id as supplier_id, s.code as supplier_code, s.name as supplier_name
+            from bsd_customer c
+            left join bsd_customer_cat ca on ca.id = c.cat_id
+            left join sys_employee e on e.id = c.employee_id
+            left join bsd_level l on l.id = c.level_id
+            left join bsd_customer_supplier cs on cs.customer_id = c.id
+            left join bsd_supplier s on s.id = cs.supplier_id
+            where c.id = #{id}
+    </select>
+
+    <select id="listOptions" resultType="java.util.Map">
+        select * from bsd_customer
+        <where>
+            1=1
+            <if test="keywords != null and keywords != ''">
+                and (
+                `code` LIKE concat('%',#{keywords,jdbcType=VARCHAR},'%')
+                or `name` LIKE concat('%',#{keywords,jdbcType=VARCHAR},'%')
+                or `contacter` LIKE concat('%',#{keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        limit 10
+    </select>
+
+    <select id="listPage" resultType="com.mrguo.entity.bsd.Customer">
+        select b.* from bsd_customer b
+        <where>
+            1 = 1
+            <if test="record.isCanViewOtherUserCustomer == '0'.toString()">
+                and (
+                b.employee_id = #{record.employeeId}
+                or b.employee_id is null
+                )
+            </if>
+            <if test="record.catId != null and record.catId != ''">
+                and b.cat_id like concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.code LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.name LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.contacter LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.address LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="listAllData" resultType="com.mrguo.entity.bsd.Customer">
+        select c.*,
+        ca.`name` as cat_name,
+        e.real_name as employee_name
+        from bsd_customer c
+        left join bsd_customer_cat ca on ca.id = c.cat_id
+        left join sys_employee e on e.id = c.relation_id
+    </select>
+
+    <select id="exportData" resultType="com.mrguo.service.impl.excle.ExcleCustomerData">
+        select c.*,
+        ca.`name` as cat_name,
+        e.real_name as employee_name
+        from bsd_customer c
+        left join bsd_customer_cat ca on ca.id = c.cat_id
+        left join sys_employee e on e.id = c.relation_id
+    </select>
+</mapper>

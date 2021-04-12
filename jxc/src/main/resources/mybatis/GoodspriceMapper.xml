@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.goods.GoodspriceMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.goods.GoodsPrice">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="price_id" jdbcType="BIGINT" property="priceId"/>
+        <result column="sku_id" jdbcType="BIGINT" property="skuId"/>
+        <result column="unit" jdbcType="VARCHAR" property="unit"/>
+        <result column="price" jdbcType="VARCHAR" property="price"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        price_id, sku_id, unit, price
+    </sql>
+
+    <delete id="delDataBySkuIds">
+        delete from bsd_goods_price
+        <if test="list.size() > 0">
+            where sku_id in
+            <foreach collection="list" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+</mapper>

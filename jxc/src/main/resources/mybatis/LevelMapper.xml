@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bsd.LevelMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.bsd.Level">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="discount" jdbcType="INTEGER" property="discount"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, code, `name`, discount
+    </sql>
+
+    <select id="listPage" resultType="com.mrguo.entity.bsd.Level">
+        select * from bsd_level
+        <where>
+            1=1
+            <if test="data.keywords != null and data.keywords != ''">
+                and (
+                code like concat('%',#{data.keywords,jdbcType=VARCHAR},'%')
+                or `name` like concat('%',#{data.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="listOptions" resultType="java.util.Map">
+        select
+        id as `value`,
+        CONCAT(`name`,'(',discount,'%)') as label,
+        `is_sys`
+        from bsd_level
+    </select>
+
+    <select id="selectSysData" resultType="com.mrguo.entity.bsd.Level">
+        select *
+        from bsd_level
+        where is_sys = "1"
+    </select>
+
+    <select id="countByCode" resultType="java.lang.Integer">
+        select count(1) from bsd_level where code = #{code}
+    </select>
+</mapper>

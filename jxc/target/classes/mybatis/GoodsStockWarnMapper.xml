@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.goods.GoodsStockWarnMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.goods.GoodsStockWarn">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="sku_id" jdbcType="BIGINT" property="skuId"/>
+        <id column="store_id" jdbcType="BIGINT" property="storeId"/>
+        <result column="min_qty_warning" jdbcType="DECIMAL" property="minQtyWarning"/>
+        <result column="max_qty_warning" jdbcType="DECIMAL" property="maxQtyWarning"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        sku_id, store_id, min_qty_warning, max_qty_warning
+    </sql>
+
+    <select id="countStockWarnMax" resultType="java.lang.Integer">
+    select count(1) from (
+      select sku.id, sku.`code`, sku.`name`,
+      s.store_id, sto.`name` as store_name,
+      (s.origin_quantity + s.quantity_in + s.wait_quantity_in - s.quantity_out - s.wait_quantity_out) as quantity,
+      sw.min_qty_warning, sw.max_qty_warning
+      from bsd_goods_sku sku
+      left join bsd_goods_stock s on s.sku_id = sku.id
+      left join bsd_store sto on sto.id = s.store_id
+      left join bsd_goods_stock_warn sw on sw.sku_id = sku.id and sw.store_id = s.store_id
+    ) a
+    where quantity <![CDATA[>=]]> max_qty_warning
+    and min_qty_warning != 0 and max_qty_warning != 0
+  </select>
+
+    <select id="countStockWarnMin" resultType="java.lang.Integer">
+    select count(1) from (
+      select sku.id, sku.`code`, sku.`name`,
+      s.store_id, sto.`name` as store_name,
+      (s.origin_quantity + s.quantity_in + s.wait_quantity_in - s.quantity_out - s.wait_quantity_out) as quantity,
+      sw.min_qty_warning, sw.max_qty_warning
+      from bsd_goods_sku sku
+      left join bsd_goods_stock s on s.sku_id = sku.id
+      left join bsd_store sto on sto.id = s.store_id
+      left join bsd_goods_stock_warn sw on sw.sku_id = sku.id and sw.store_id = s.store_id
+    ) a
+    where quantity <![CDATA[<=]]> min_qty_warning
+    and min_qty_warning != 0 and max_qty_warning != 0
+  </select>
+
+    <select id="selectWarningGoods" resultType="java.util.Map">
+        select * from (
+        select sku.id, sku.`code`, sku.`name`,
+        s.store_id, sto.`name` as store_name,
+        u.`name` as unit_name,
+        (s.origin_quantity + s.quantity_in + s.wait_quantity_in - s.quantity_out - s.wait_quantity_out) as quantity,
+        sw.min_qty_warning, sw.max_qty_warning
+        from bsd_goods_sku sku
+        left join bsd_goods_unit gu on gu.sku_id = sku.id and gu.is_base = '1'
+        left join bsd_unit u on u.id = gu.unit_id
+        left join bsd_goods_stock s on s.sku_id = sku.id
+        left join bsd_store sto on sto.id = s.store_id
+        left join bsd_goods_stock_warn sw on sw.sku_id = sku.id and sw.store_id = s.store_id
+        <where>
+            1=1
+            <if test="record.storeId != null and record.storeId != '' and record.storeId != '-1'.toString()">
+                and s.store_id = #{record.storeId}
+                and sw.store_id = #{record.storeId}
+                and sto.id = #{record.storeId}
+            </if>
+            <if test="record.catId != null and record.catId != '' and record.catId != '-1'.toString()">
+                and sku.cat_id LIKE concat('%',#{record.catId},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                sku.`code` LIKE concat('%',#{record.keywords},'%')
+                or sku.`name` LIKE concat('%',#{record.keywords},'%')
+                )
+            </if>
+        </where>
+        ) a
+        where quantity <![CDATA[<=]]> min_qty_warning or quantity <![CDATA[>=]]> max_qty_warning
+        and min_qty_warning != 0 and max_qty_warning != 0
+    </select>
+</mapper>

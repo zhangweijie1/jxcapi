@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bill.BillAssembelMapper">
+
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, store_id_out, store_id_in
+    </sql>
+
+    <select id="selectListData" resultType="com.mrguo.vo.bill.BillAssembelVo">
+      select b.*,
+        bsout.`name` as store_name_out, bsin.`name` as store_name_in,
+        sum(dout.total) as total_price_out,
+        sum(din.total) as total_price_in,
+        ba.goods_name_out, ba.goods_name_in
+        from t_bill b
+        left join t_bill_ext_assembel ba on ba.id = b.id
+        left join t_bill_detail dout on dout.bill_id = b.id and dout.direction = '0'
+        left join t_bill_detail din on din.bill_id = b.id and din.direction = '1'
+        left join bsd_store bsout on bsout.id = ba.store_id_out
+        left join bsd_store bsin on bsin.id = ba.store_id_in
+        <where>
+            and b.bill_cat = 'assemble'
+            <if test="record.isCancle == '0'.toString()">
+                and b.is_cancle = #{record.isCancle}
+            </if>
+            <if test="record.storeIdOut != null and record.storeIdOut != ''">
+                and ba.store_id_out = #{record.storeIdOut}
+            </if>
+            <if test="record.storeIdIn != null and record.storeIdIn != ''">
+                and ba.store_id_in = #{record.storeIdIn}
+            </if>
+            <if test="record.billNo != null and record.billNo != ''">
+                and b.bill_no LIKE concat('%',#{record.billNo,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.goodsNamestr != null and record.goodsNamestr != ''">
+                and b.goods_namestr LIKE concat('%',#{record.goodsNamestr,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.comegoName != null and record.comegoName != ''">
+                and b.comego_name LIKE concat('%',#{record.comegoName,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.cBeginTime != null and record.cBeginTime != '' and record.cEndTime != null and record.cEndTime != ''">
+                and b.create_time between #{record.cBeginTime} and #{record.cEndTime}
+            </if>
+            <if test="record.bBeginTime != null and record.bBeginTime != '' and record.bEndTime != null and record.bEndTime != ''">
+                and b.business_time between #{record.bBeginTime} and #{record.bEndTime}
+            </if>
+            <if test="record.handUserId != null and record.handUserId != ''">
+                and b.hand_user_id = #{record.handUserId,jdbcType=BIGINT}
+            </if>
+            <if test="record.createUserId != null and record.createUserId != ''">
+                and b.create_user_id = #{record.createUserId,jdbcType=BIGINT}
+            </if>
+            <if test="record.auditStatus != null and record.auditStatus != ''">
+                and b.audit_status = #{record.auditStatus,jdbcType=VARCHAR}
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.`bill_no` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.`goods_namestr` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.`remarks` LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        group by b.id
+        order by b.create_time desc
+    </select>
+
+    <select id="selectOneByBillId" resultType="com.mrguo.vo.bill.BillAssembelVo">
+        select b.*,
+        ba.store_id_out, ba.store_id_in,
+        bsout.`name` as store_name_out, bsin.`name` as store_name_in,
+        e.real_name as hand_user_name
+        from t_bill b
+        left join t_bill_ext_assembel ba on ba.id = b.id
+        left join bsd_store bsout on bsout.id = ba.store_id_out
+        left join bsd_store bsin on bsin.id = ba.store_id_in
+        left join sys_employee e on e.id = b.hand_user_id
+        where b.id = #{billId}
+    </select>
+</mapper>

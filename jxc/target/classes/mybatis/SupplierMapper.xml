@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.bsd.SupplierMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.bsd.Supplier">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="cat" jdbcType="BIGINT" property="cat"/>
+        <result column="contacter" jdbcType="VARCHAR" property="contacter"/>
+        <result column="phone" jdbcType="VARCHAR" property="phone"/>
+        <result column="address" jdbcType="VARCHAR" property="address"/>
+        <result column="amount_payable" jdbcType="DECIMAL" property="amountPayable"/>
+        <result column="employee_id" jdbcType="BIGINT" property="employeeId"/>
+        <result column="wechat" jdbcType="VARCHAR" property="wechat"/>
+        <result column="qq" jdbcType="VARCHAR" property="qq"/>
+        <result column="company_tel" jdbcType="VARCHAR" property="companyTel"/>
+        <result column="tax" jdbcType="VARCHAR" property="tax"/>
+        <result column="email" jdbcType="VARCHAR" property="email"/>
+        <result column="postal" jdbcType="VARCHAR" property="postal"/>
+        <result column="relation_id" jdbcType="BIGINT" property="relationId"/>
+        <result column="remarks" jdbcType="VARCHAR" property="remarks"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, code, name, cat, contacter, phone, address, amount_payable, employee_id, wechat,
+        qq, company_tel, tax, email, postal, relation_id, remarks
+    </sql>
+
+    <select id="listOptions" resultType="java.util.Map">
+        select * from bsd_supplier
+        <where>
+            1=1
+            <if test="keywords != null and keywords != ''">
+                and (
+                `code` LIKE concat('%',#{keywords,jdbcType=VARCHAR},'%')
+                or `name` LIKE concat('%',#{keywords,jdbcType=VARCHAR},'%')
+                or `contacter` LIKE concat('%',#{keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+        limit 10
+    </select>
+
+    <select id="listPage" resultType="com.mrguo.entity.bsd.Supplier">
+        select b.* from bsd_supplier b
+        <where>
+            1=1
+            <if test="record.catId != null and record.catId != ''">
+                and b.cat_id like concat(#{record.catId,jdbcType=VARCHAR},'%')
+            </if>
+            <if test="record.keywords != null and record.keywords != ''">
+                and (
+                b.code LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.name LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.contacter LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                or b.address LIKE concat('%',#{record.keywords,jdbcType=VARCHAR},'%')
+                )
+            </if>
+        </where>
+    </select>
+
+    <select id="statistics" resultType="com.mrguo.entity.bill.Bill" parameterType="com.mrguo.entity.bill.Bill">
+        select p.id, p.purchase_number as orderNumber, p.purchase_date as saleDate, p.supplier_id, s.name as
+        supplier_name, p.amount_paid,
+        p.amount_payable, p.user_id, u.username as userName, p.state, p.remarks
+        FROM t_purchase_list p
+        LEFT JOIN t_supplier s on p.supplier_id = s.id
+        LEFT JOIN sys_user u on p.user_id = u.uid
+        <where>
+            <if test="orderNumber != null and orderNumber != ''">
+                and p.purchase_number LIKE CONCAT('%', #{orderNumber}, '%')
+            </if>
+            <if test="supplierId != null and supplierId != ''">
+                and p.supplier_id = #{supplierId}
+            </if>
+            <if test="state != null and state != ''">
+                and p.state = #{state}
+            </if>
+            <if test="beginDate != null and endDate != null">
+                and p.purchase_date between #{beginDate} and #{endDate}
+            </if>
+        </where>
+        UNION ALL
+        SELECT r.id, r.return_number as orderNumber, r.return_date as saleDate, r.supplier_id, s.name as supplier_name,
+        r.amount_paid,
+        r.amount_payable, r.user_id, u.username as userName, r.state, r.remarks
+        from t_return_list r
+        LEFT JOIN t_supplier s on r.supplier_id = s.id
+        LEFT JOIN sys_user u on r.user_id = u.uid
+        <where>
+            <if test="orderNumber != null and orderNumber != ''">
+                and r.return_number LIKE CONCAT('%', #{orderNumber}, '%')
+            </if>
+            <if test="supplierId != null and supplierId != ''">
+                and r.supplier_id = #{supplierId}
+            </if>
+            <if test="state != null and state != ''">
+                and r.state = #{state}
+            </if>
+            <if test="beginDate != null and endDate != null">
+                and r.return_date between #{beginDate} and #{endDate}
+            </if>
+        </where>
+    </select>
+
+    <select id="exportData" resultType="com.mrguo.service.impl.excle.ExcleSupplierData">
+        select c.*,
+        ca.`name` as cat_name
+        from bsd_supplier c
+        left join bsd_supplier_cat ca on ca.id = c.cat_id
+    </select>
+</mapper>

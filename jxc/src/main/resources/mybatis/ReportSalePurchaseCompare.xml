@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.report.PurchaseSaleCompareReportMapper">
+
+    <select id="listCompare" resultType="com.mrguo.dto.report.PurchaseSaleCompareReportDto">
+        select * from
+        (
+        select sku.id as sku_id, sku.code, sku.name,
+        sum(if(b.bill_cat = 'purchase',d.quantity * d.unit_multi,0)) as qty_purchase,
+        sum(if(b.bill_cat = 'purchase_return',d.quantity * d.unit_multi,0)) as qty_purchase_return,
+        sum(if(b.bill_cat = 'sale',d.quantity * d.unit_multi,0)) as qty_sale,
+        sum(if(b.bill_cat = 'sale_return',d.quantity * d.unit_multi,0)) as qty_sale_return,
+        sum(if(b.bill_cat = 'purchase',d.quantity * d.price,0)) as amount_purchase,
+        sum(if(b.bill_cat = 'purchase_return',d.quantity * d.price,0)) as amount_purchase_return,
+        sum(if(b.bill_cat = 'sale',d.quantity * d.price,0)) as amount_sale,
+        sum(if(b.bill_cat = 'sale_return',d.quantity * d.price,0)) as amount_sale_return,
+        sum(if(b.bill_cat = 'sale',d.quantity * d.unit_multi * cp.price_cost,0)) as price_cost_total,
+        sum(if(b.bill_cat = 'sale_return',d.quantity * d.unit_multi * cp.price_cost,0)) as price_cost_total_return
+        from t_bill b
+        left join t_bill_detail d on d.bill_id = b.id
+        left join bsd_goods_sku sku on sku.id = d.sku_id
+        left join log_goods_costprice cp on cp.sku_id = d.sku_id and cp.bill_id = b.id
+        <where>
+          b.bill_cat in ('purchase','purchase_return','sale','sale_return') and b.is_cancle = '0'
+          <if test="record.beginTime != null and record.beginTime != '' and record.endTime != null and record.endTime != ''">
+            and b.business_time between #{record.beginTime} and #{record.endTime}
+          </if>
+        </where>
+        GROUP BY d.sku_id
+        ) mas
+        left join (
+        select sku.id, u.name as unit_name
+        from bsd_goods_sku sku
+        left join bsd_goods_unit gu on gu.sku_id = sku.id and gu.is_base = '1'
+        left join bsd_unit u on u.id = gu.unit_id
+        ) ubase on ubase.id = mas.sku_id
+    </select>
+</mapper>

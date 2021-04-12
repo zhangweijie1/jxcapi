@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.goods.GoodsUnitMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.goods.GoodsUnit">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="unit_id" jdbcType="BIGINT" property="unitId"/>
+        <id column="sku_id" jdbcType="BIGINT" property="skuId"/>
+        <result column="multi" jdbcType="DECIMAL" property="multi"/>
+        <result column="is_base" jdbcType="DECIMAL" property="isBase"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        unit_id, sku_id, multi, is_base
+    </sql>
+
+    <select id="listAllData" resultType="com.mrguo.entity.goods.GoodsUnit">
+        select sku.id as sku_id, gu.unit_id, u.name as unit_name, gu.multi, gu.is_base
+        from bsd_goods_sku sku
+        left join bsd_goods_unit gu on gu.sku_id = sku.id
+        left join bsd_unit u on u.id = gu.unit_id
+    </select>
+
+    <delete id="delDataBySkuIds">
+        delete from bsd_goods_unit
+        <if test="list.size() > 0">
+            where sku_id in
+            <foreach collection="list" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </delete>
+</mapper>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mrguo.dao.origin.OriginMasterMapper">
+    <resultMap id="BaseResultMap" type="com.mrguo.entity.origin.OriginMaster">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="balance_time" jdbcType="TIMESTAMP" property="balanceTime"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="create_user" jdbcType="BIGINT" property="createUser"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--
+          WARNING - @mbg.generated
+        -->
+        id, balance_time, create_time, create_user
+    </sql>
+
+    <select id="count" resultType="java.lang.Integer">
+        select count(1) from origin_master
+    </select>
+
+    <select id="selectLastData" resultType="com.mrguo.entity.origin.OriginMaster">
+        select * from origin_master
+        where balance_time = (
+        select max(balance_time) from origin_master
+        )
+    </select>
+
+    <select id="selectBalanceTime" resultType="java.util.Map">
+        select
+        DATE_FORMAT(max(create_time),'%Y-%m-%d') as last_balance_time,
+        DATE_FORMAT(min(create_time),'%Y-%m-%d') as sys_balance_time
+        from origin_master
+    </select>
+
+    <select id="selectOriginAll" resultType="com.mrguo.entity.origin.OriginMaster">
+        select
+        balance_time,
+        m.create_time,
+        e.real_name as username
+        from origin_master m
+        left join sys_employee e on e.id = m.create_user
+        order by balance_time desc
+    </select>
+
+</mapper>
